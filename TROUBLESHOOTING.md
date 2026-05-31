@@ -7,34 +7,25 @@
 **Symptoms:**
 - Plugin menu item clicked
 - Error appears: "The plug-in encountered an error when performing the menu item..."
-- Message includes: "Could not find namespace: LrCatalog" (or LrLogger, LrDialogs)
+- Message includes: "Could not find namespace: LrCatalog" (or LrCollection, LrCollectionSet, LrPlugin, or other classes)
 
 **Root Cause:**
-Lightroom SDK namespaces imported at module level instead of inside function context.
+Lightroom SDK classes cannot be imported. An object must be retrieved before interacting with this class.
 
 **Quick Fix:**
-In the affected module, move all `import` statements for `LrCatalog`, `LrLogger`, and `LrDialogs` from the top of the file into the functions that use them.
+In the affected module, retrieve an object instead of trying to import a namespace.
 
 **Before (Wrong):**
 ```lua
 --[[Util_CatalogUtils.lua]]
-local LrCatalog = import 'LrCatalog'  -- ❌ At module level
-local LrLogger = import 'LrLogger'
-
-function CatalogUtils.createCollections(set, names)
-    -- Uses LrCatalog and LrLogger
-end
+local LrCatalog = import 'LrCatalog'  -- ❌ Cannot import a class
 ```
 
 **After (Correct):**
 ```lua
 --[[Util_CatalogUtils.lua]]
-function CatalogUtils.createCollections(set, names)
-    local LrCatalog = import 'LrCatalog'  -- ✅ Inside function
-    local LrLogger = import 'LrLogger'
-    
-    -- Uses LrCatalog and LrLogger
-end
+local LrApplication = import 'LrApplication'
+local catalog = LrApplication.activeCatalog()
 ```
 
 **Detailed Solution:**
@@ -42,34 +33,19 @@ end
 1. **Identify the problem file**
    - Look at Lightroom's debug log for the exact file name
    - Debug log locations:
-     - macOS: `~/Library/Logs/Adobe/Lightroom/Lightroom Debug.log`
-     - Windows: `%APPDATA%\Adobe\Lightroom\Logs\Lightroom Debug.log`
+     - macOS: `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/<Plugin Name>.log`
+     - Windows: `%APPDATA%\Adobe\Lightroom\Logs\<Plugin Name>.log`
 
-2. **Move the imports**
+2. **Replace the imports**
    - Find lines like: `local LrCatalog = import 'LrCatalog'` at the top
-   - Cut these lines
-   - Paste them inside each function that uses them
+   - Replace them with the object retrieval method
 
 3. **Test the fix**
    - Restart Lightroom
    - Try the menu item again
 
 4. **Verification**
-   - Safe namespaces at module level: `LrView`, `LrBinding`, `LrFunctionContext`
-   - Must be inside functions: `LrCatalog`, `LrLogger`, `LrDialogs`, `LrPrefs`
-
----
-
-### Error: "Could not find namespace: LrView"
-
-**Symptoms:**
-- Similar to LrCatalog error but with LrView
-
-**Root Cause:**
-Less common - usually occurs when LrView is imported inside a function that doesn't have the UI context.
-
-**Solution:**
-`LrView` should be imported at module level, not inside functions. Check if it's incorrectly placed inside a function.
+   - Menu item runs without throwing the "Could not find namespace" error
 
 ---
 
@@ -176,7 +152,7 @@ Use valid characters in collection names. Valid characters are any except:
 **Symptoms:**
 - Plugin folder installed
 - Lightroom restarted
-- Menu item not in Library menu
+- Menu item not in File\Plug-in Extras or Library menu
 
 **Root Cause:**
 Usually a syntax error in Info.lua
@@ -188,6 +164,7 @@ Usually a syntax error in Info.lua
    - `LrToolkitIdentifier` (exact case!)
    - `LrPluginName`
    - `LrLibraryMenuItems`
+   - `LrExportMenuItems`
 
 4. Verify file reference matches:
    ```lua
@@ -256,14 +233,15 @@ return {
 Add logging to any function to debug:
 
 ```lua
-local LrLogger = import 'LrLogger'
-LrLogger.info("Variable value: " .. tostring(value))
-LrLogger.warn("Potential issue: " .. issue)
+local logger = import 'LrLogger'( "PluginName" )
+logger:enable( {"print", "logfile"} ) -- Enable logging to console
+logger:info("Variable value: " .. tostring(value))
+logger:warn("Potential issue: " .. issue)
 ```
 
 Check logs at:
-- macOS: `~/Library/Logs/Adobe/Lightroom/Lightroom Debug.log`
-- Windows: `%APPDATA%\Adobe\Lightroom\Logs\Lightroom Debug.log`
+- macOS: `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/<PluginName>.log`
+- Windows: `%APPDATA%\Adobe\Lightroom\Logs\<PluginName>.log`
 
 ### Use Lightroom's Console
 
@@ -307,6 +285,7 @@ Check these files first:
 2. **EXAMPLES.md** - Real-world scenarios and solutions
 3. **DEVELOPMENT.md** - Technical implementation details
 4. **SPECIFICATION.md** - Requirements and design
+5. **LRPLUGINDEVELOPMENT.md** - LR plugin specific development standards and conventions
 
 ---
 
