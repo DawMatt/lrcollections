@@ -17,7 +17,7 @@ In the affected module, move all `import` statements for `LrCatalog`, `LrLogger`
 
 **Before (Wrong):**
 ```lua
---[[CatalogUtils.lua]]
+--[[Util_CatalogUtils.lua]]
 local LrCatalog = import 'LrCatalog'  -- ❌ At module level
 local LrLogger = import 'LrLogger'
 
@@ -28,7 +28,7 @@ end
 
 **After (Correct):**
 ```lua
---[[CatalogUtils.lua]]
+--[[Util_CatalogUtils.lua]]
 function CatalogUtils.createCollections(set, names)
     local LrCatalog = import 'LrCatalog'  -- ✅ Inside function
     local LrLogger = import 'LrLogger'
@@ -77,7 +77,7 @@ Less common - usually occurs when LrView is imported inside a function that does
 
 **Symptoms:**
 - Error after collections are created
-- Message mentions a line number in CollectionMechanic.lua or MainDialog.lua
+- Message mentions a line number in CollectionMechanic.lua or UI_MainDialog.lua
 
 **Root Cause:**
 Usually means a callback function returned nil or an object doesn't exist.
@@ -230,7 +230,7 @@ Localization strings file not found or incorrect path
 **Solution:**
 Verify file structure:
 ```
-com.thephotogeek.lrcollectionmechanic.lrdevplugin/
+lrcollectionmechanic.lrdevplugin/
 └── Localization/
     └── en.lproj/
         └── Strings.lua
@@ -389,8 +389,8 @@ For additional help:
 | Problem | File | Section | Solution |
 |---------|------|---------|----------|
 | Plugin won't open | Info.lua | Syntax | Check syntax, restart |
-| LrCatalog not found | CatalogUtils.lua | Imports | Move imports into functions |
-| Collections don't appear | MainDialog.lua | Selection | Verify parent set selected |
-| Special chars fail | StringUtils.lua | Sanitization | Use valid characters |
+| LrCatalog not found | Util_CatalogUtils.lua | Imports | Move imports into functions |
+| Collections don't appear | UI_MainDialog.lua | Selection | Verify parent set selected |
+| Special chars fail | Util_StringUtils.lua | Sanitization | Use valid characters |
 | Catalog locked | CollectionMechanic.lua | Error handling | Retry operation |
 

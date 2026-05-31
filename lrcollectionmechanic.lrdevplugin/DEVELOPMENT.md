@@ -13,10 +13,10 @@ The Collection Mechanic plugin follows a modular, layered architecture:
 └────────────┬──────────────────────────────┬─────────────┘
              │                              │
     ┌────────▼────────┐         ┌──────────▼──────────┐
-    │  UI/MainDialog  │         │  Utilities/         │
-    │  - Layout       │         │  StringUtils        │
-    │  - Bindings     │         │  CatalogUtils       │
-    │  - Results      │         └──────────────────────┘
+    │  UI_MainDialog  │         │  Util_StringUtils   │
+    │  - Layout       │         │  Util_CatalogUtils  │
+    │  - Bindings     │         └──────────────────────┘
+    │  - Results      │         
     └─────────────────┘
              │
     ┌────────▼────────────────────────────┐
@@ -43,7 +43,7 @@ The Collection Mechanic plugin follows a modular, layered architecture:
 4. Shows modal dialog
 5. Handles user interactions (dry run, execute, close)
 
-### StringUtils.lua
+### Util_StringUtils.lua
 
 **Responsibility**: String sanitization and parsing
 
@@ -73,7 +73,7 @@ RESERVED_CHARS = {
 }
 ```
 
-### CatalogUtils.lua
+### Util_CatalogUtils.lua
 
 **Responsibility**: Lightroom catalog operations
 
@@ -88,7 +88,7 @@ RESERVED_CHARS = {
 - `LrCatalog.withWriteAccessDo()` - Write access context
 - `LrCatalog.createCollection(name, parent, canReturnPrior)` - Create individual collection
 
-### MainDialog.lua (UI)
+### UI_MainDialog.lua (UI)
 
 **Responsibility**: Dialog UI layout and presentation
 
@@ -276,8 +276,8 @@ For future unit tests, organize by module:
 
 ```
 tests/
-├── StringUtils_test.lua
-├── CatalogUtils_test.lua
+├── Util_StringUtils_test.lua
+├── Util_CatalogUtils_test.lua
 ├── CollectionMechanic_test.lua
 └── fixtures/
     └── test_data.lua
@@ -364,11 +364,9 @@ Current structure follows Lightroom conventions:
 plugin.lrdevplugin/
 ├── Info.lua                # Required metadata
 ├── MainEntry.lua           # Main menu entry point
-├── Utilities/              # Helper modules
-│   ├── StringUtils.lua
-│   └── CatalogUtils.lua
-├── UI/                     # UI-related modules
-│   └── MainDialog.lua
+├── Util_StringUtils.lua
+├── Util_CatalogUtils.lua
+├── UI_MainDialog.lua
 ├── Localization/           # Language strings
 │   └── en.lproj/
 │       └── Strings.lua

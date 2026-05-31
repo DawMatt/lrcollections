@@ -13,7 +13,7 @@ A powerful Adobe Lightroom Classic plugin for creating multiple collections in b
 
 ## Installation
 
-1. Copy the `com.thephotogeek.lrcollectionmechanic.lrdevplugin` folder to your Lightroom plugins directory:
+1. Copy the `lrcollectionmechanic.lrdevplugin` folder to your Lightroom plugins directory:
    - **macOS**: `~/Library/Application Support/Adobe/Lightroom/Plugins/`
    - **Windows**: `C:\Users\[YourUsername]\AppData\Roaming\Adobe\Lightroom\Plugins\`
 
@@ -94,14 +94,12 @@ Make sure Lightroom has write access to your catalog and no other operations are
 
 ### File Structure
 ```
-com.thephotogeek.lrcollectionmechanic.lrdevplugin/
+lrcollectionmechanic.lrdevplugin/
 ├── Info.lua                    # Plugin metadata
 ├── CollectionMechanic.lua      # Main logic
-├── UI/
-│   └── MainDialog.lua          # Dialog UI
-└── Utilities/
-    ├── StringUtils.lua         # String utilities
-    └── CatalogUtils.lua        # Catalog operations
+├── UI_MainDialog.lua           # Dialog UI
+└── Util_StringUtils.lua        # String utilities
+└── Util_CatalogUtils.lua       # Catalog operations
 ```
 
 ## Support & Feedback

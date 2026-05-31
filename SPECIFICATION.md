@@ -184,14 +184,12 @@ All characters are acceptable EXCEPT those reserved by the file system or Lightr
 ### 3.1 Plugin Structure
 
 ```
-com.thephotogeek.lrcollectionmechanic.lrdevplugin/
+lrcollectionmechanic.lrdevplugin/
 ├── Info.lua                              # Plugin metadata
 ├── CollectionMechanic.lua            # Main plugin logic
-├── UI/
-│   └── MainDialog.lua                    # Dialog UI definition
-└── Utilities/
-    ├── StringUtils.lua                   # String sanitization
-    └── CatalogUtils.lua                  # Collection operations
+├── UI_MainDialog.lua                    # Dialog UI definition
+├── Util_StringUtils.lua                 # String sanitization
+└── Util_CatalogUtils.lua                # Collection operations
 ```
 
 ### 3.2 File Responsibilities
@@ -207,18 +205,18 @@ com.thephotogeek.lrcollectionmechanic.lrdevplugin/
 - Dry run and execute workflows
 - Event handling
 
-#### UI/MainDialog.lua
+#### UI_MainDialog.lua
 - LrView layout definitions
 - LrBinding property bindings
 - Button callbacks
 - Result dialog presentations
 
-#### Utilities/StringUtils.lua
+#### Util_StringUtils.lua
 - `sanitizeCollectionName(name)` - Apply sanitization rules
 - `isValidCollectionName(name)` - Validate final name
 - Character replacement logic
 
-#### Utilities/CatalogUtils.lua
+#### Util_CatalogUtils.lua
 - `getCollectionSets()` - Retrieve all collection sets
 - `createCollections(collectionSet, names)` - Batch create collections
 - Catalog access control handling
@@ -372,7 +370,7 @@ collectionSetOption = {
 
 ### 7.1 Design Patterns
 
-- **MVC Pattern**: Separate UI (MainDialog.lua), business logic (CatalogUtils.lua), and data (props)
+- **MVC Pattern**: Separate UI (UI_MainDialog.lua), business logic (CatalogUtils.lua), and data (props)
 - **Observer Pattern**: Use LrBinding for reactive UI updates
 - **Adapter Pattern**: Wrap LrCatalog operations for easy testing
 

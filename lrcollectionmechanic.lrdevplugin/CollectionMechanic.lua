@@ -5,15 +5,24 @@
 	Handles dialog initialization, user interactions, and workflows.
 --]]
 
+PLUGIN_NAME = "TPG-Collection-Mechanic"
+
+local LrApplication = import 'LrApplication'
 local LrFunctionContext = import 'LrFunctionContext'
 
-local StringUtils = require 'Utilities.StringUtils'
-local CatalogUtils = require 'Utilities.CatalogUtils'
-local UIManager = require 'UI.MainDialog'
+local logger = import 'LrLogger'( PLUGIN_NAME )
+logger:enable( {"print", "logfile"} ) -- Enable logging to console
+logger:info("*** CollectionMechanic loaded")
+
+require 'Util_StringUtils'
+require 'Util_CatalogUtils'
+require 'UI_MainDialog'
+
+local catalog = LrApplication.activeCatalog()
 
 --[[
 	Main entry point for the Collection Mechanic plugin.
-	Called when user selects the plugin from the Library menu.
+	Called when user selects the plugin from the menu.
 --]]
 local function showCollectionMechanicDialog()
 	LrFunctionContext.callWithContext("CollectionMechanic", function(context)
@@ -21,7 +30,6 @@ local function showCollectionMechanicDialog()
 		-- Import SDK namespaces inside context
 		local LrBinding = import 'LrBinding'
 		local LrDialogs = import 'LrDialogs'
-		local LrCatalog = import 'LrCatalog'
 		local LrLogger = import 'LrLogger'
 		
 		-- Get all available collection sets
@@ -138,7 +146,6 @@ end
 	@param collectionSetOptions (array) Collection set options
 --]]
 local LrLogger = import 'LrLogger'
-	local LrCatalog = import 'LrCatalog'
 	local function performExecution(props, collectionSetOptions)
 	LrLogger.info("Starting execution...")
 	

@@ -14,7 +14,7 @@ return {
 
 	LrToolkitIdentifier = 'com.thephotogeek.lrcollectionmechanic',
 
-	LrPluginName = LOC "$$$/CollectionMechanic/PluginName=TPG Collection Mechanic",
+	LrPluginName = LOC "$$$/CollectionMechanic/PluginName=1 TPG Collection Mechanic",
 	
 	-- Add the command to the Library menu and File > Plug-in Extras menu
 	LrLibraryMenuItems = {
@@ -24,7 +24,7 @@ return {
 		},
 	},
 
-	LrPluginMenuItems = {
+	LrExportMenuItems = {
 		{
 			title = LOC "$$$/CollectionMechanic/MenuTitle=Create Collections in Batch",
 			file = "CollectionMechanic.lua",

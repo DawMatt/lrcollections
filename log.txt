@@ -1,0 +1,12 @@
+Plug-in error log for plug-in at: /Users/matt/Code/DawMatt/lrcollections/lrcollectionmechanic.lrdevplugin
+
+**** Error 1
+
+An error occurred while attempting to run one of the plug-in’s scripts.
+Could not find namespace: LrCatalog
+
+**** Error 2
+
+The plug-in encountered an error when performing the menu item “Create Collections in Batch”.
+Could not find namespace: LrCatalog
+

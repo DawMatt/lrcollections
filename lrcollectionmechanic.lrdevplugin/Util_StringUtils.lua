@@ -1,10 +1,10 @@
 --[[
-	StringUtils.lua
+	Util_StringUtils.lua
 	
 	Utility functions for string manipulation and collection name sanitization.
 --]]
 
-local StringUtils = {}
+StringUtils = {}
 
 -- Characters that must be replaced with underscores
 local RESERVED_CHARS = {

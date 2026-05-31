@@ -1,10 +1,18 @@
 --[[
-	CatalogUtils.lua
+	Util_CatalogUtils.lua
 	
 	Utility functions for catalog operations and collection management.
 --]]
 
-local CatalogUtils = {}
+CatalogUtils = {}
+
+local LrApplication = import 'LrApplication'
+
+local catalog = LrApplication.activeCatalog()
+local logger = import 'LrLogger'( PLUGIN_NAME )
+-- local logger = import 'LrLogger'( 'CollectionMechanic' )
+
+logger:info("*** CatalogUtils module loaded")
 
 --[[
 	Build a hierarchical list of all collection sets in the catalog.
@@ -12,11 +20,10 @@ local CatalogUtils = {}
 	@return array of collection set options {displayName, collectionSet}
 --]]
 function CatalogUtils.getAllCollectionSets()
-	local LrCatalog = import 'LrCatalog'
 	local options = {}
 	
 	-- Get top-level collection sets
-	local topSets = LrCatalog.getChildCollectionSets()
+	local topSets = catalog:getChildCollectionSets()
 	
 	for _, collectionSet in ipairs(topSets) do
 		CatalogUtils._addCollectionSetOption(collectionSet, "", options)
@@ -67,16 +74,15 @@ end
 function CatalogUtils.createCollections(collectionSet, collectionNames)
 	local successful = {}
 	local failed = {}
-	LrCatalog = import 'LrCatalog'
 	local LrLogger = import 'LrLogger'
-	local 
+	
 	if not collectionSet or not collectionNames or #collectionNames == 0 then
 		LrLogger.warn("Invalid arguments to createCollections")
 		return { successful = successful, failed = failed }
 	end
 	
 	-- Check if catalog is accessible for writing
-	if not LrCatalog.canFileAccess() then
+	if not catalog:canFileAccess() then
 		LrLogger.warn("Catalog file access not available")
 		failed = {
 			{
@@ -89,7 +95,7 @@ function CatalogUtils.createCollections(collectionSet, collectionNames)
 	end
 	
 	-- Create collections within write access context
-	local status = LrCatalog.withWriteAccessDo(
+	local status = catalog:withWriteAccessDo(
 		"Create Collections",
 		function()
 			for _, collectionName in ipairs(collectionNames) do
@@ -100,7 +106,7 @@ function CatalogUtils.createCollections(collectionSet, collectionNames)
 				local ok, result = pcall(function()
 					-- Try to create the collection
 					-- canReturnPrior = true means if collection already exists, return it instead of error
-					return LrCatalog.createCollection(
+					return catalog:createCollection(
 						collectionName,
 						collectionSet,
 						true  -- canReturnPrior

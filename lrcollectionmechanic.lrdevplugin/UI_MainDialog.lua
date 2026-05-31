@@ -1,13 +1,14 @@
 --[[
-	MainDialog.lua
+	UI_MainDialog.lua
 	
 	UI layout and binding definitions for the main Collection Mechanic dialog.
 --]]
 
 local LrView = import 'LrView'
 local LrBinding = import 'LrBinding'
+local LrDialogs = import 'LrDialogs'
 
-local UIManager = {}
+UIManager = {}
 
 --[[
 	Create the main dialog contents.
@@ -115,7 +116,6 @@ end
 	@param summary (string) Summary message
 --]]
 function UIManager.showResultsDialog(title, results, summary)
-	local LrDialogs = import 'LrDialogs'
 	local f = LrView.osFactory()
 	
 	-- Build result table rows
@@ -167,7 +167,6 @@ end
 	@param message (string) Error message
 --]]
 function UIManager.showErrorDialog(title, message)
-	local LrDialogs = import 'LrDialogs'
 	LrDialogs.showError(title, message)
 end
 
@@ -178,7 +177,6 @@ end
 	@param message (string) Message text
 --]]
 function UIManager.showInfoDialog(title, message)
-	local LrDialogs = import 'LrDialogs'
 	LrDialogs.message(title, message, "info")
 end
 
