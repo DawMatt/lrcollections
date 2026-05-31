@@ -7,6 +7,13 @@
 	for creating collections in the catalog.
 --]]
 
+local menuItems = {
+		{
+			title = LOC "$$$/CollectionMechanic/MenuTitle=Create Collections in Batch",
+			file = "CollectionMechanic.lua",
+		},
+	}
+
 return {
 	
 	LrSdkVersion = 3.0,
@@ -17,19 +24,9 @@ return {
 	LrPluginName = LOC "$$$/CollectionMechanic/PluginName=1 TPG Collection Mechanic",
 	
 	-- Add the command to the Library menu and File > Plug-in Extras menu
-	LrLibraryMenuItems = {
-		{
-			title = LOC "$$$/CollectionMechanic/MenuTitle=Create Collections in Batch",
-			file = "CollectionMechanic.lua",
-		},
-	},
+	LrLibraryMenuItems = menuItems,
 
-	LrExportMenuItems = {
-		{
-			title = LOC "$$$/CollectionMechanic/MenuTitle=Create Collections in Batch",
-			file = "CollectionMechanic.lua",
-		},
-	},
+	LrExportMenuItems = menuItems,
 
 	VERSION = { 
 		major = 1, 

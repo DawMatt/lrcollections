@@ -34,11 +34,6 @@ function UIManager.createMainDialog(props, collectionSetOptions, callbacks)
 		bind_to_object = props,
 		spacing = f:control_spacing(),
 		
-		-- Title/Header
-		f:heading {
-			title = "Collection Mechanic"
-		},
-		
 		-- Collection Set Selection Section
 		f:group_box {
 			title = "Collection Set",

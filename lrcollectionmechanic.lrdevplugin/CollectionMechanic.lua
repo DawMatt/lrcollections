@@ -17,6 +17,7 @@ logger:info("*** CollectionMechanic loaded")
 require 'Util_StringUtils'
 require 'Util_CatalogUtils'
 require 'UI_MainDialog'
+require 'Info'
 
 local catalog = LrApplication.activeCatalog()
 
@@ -25,7 +26,7 @@ local catalog = LrApplication.activeCatalog()
 	Called when user selects the plugin from the menu.
 --]]
 local function showCollectionMechanicDialog()
-	LrFunctionContext.callWithContext("CollectionMechanic", function(context)
+	LrFunctionContext.postAsyncTaskWithContext("CollectionMechanic", function(context)
 		
 		-- Import SDK namespaces inside context
 		local LrBinding = import 'LrBinding'
