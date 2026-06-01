@@ -7,6 +7,11 @@
 	for creating collections in the catalog.
 --]]
 
+-- Static details about the plugin, shared across modules
+Info = {}
+Info.PLUGINNAME = "TPG-Collection-Mechanic"
+Info.LOGGERTARGET = "logfile" -- Options: "print" or "logfile"
+
 local menuItems = {
 		{
 			title = LOC "$$$/CollectionMechanic/MenuTitle=Create Collections in Batch",

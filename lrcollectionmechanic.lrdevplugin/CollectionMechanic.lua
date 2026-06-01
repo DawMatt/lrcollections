@@ -5,33 +5,32 @@
 	Handles dialog initialization, user interactions, and workflows.
 --]]
 
-PLUGIN_NAME = "TPG-Collection-Mechanic"
+CollectionMechanic = {}
+
+require 'Info'
 
 local LrApplication = import 'LrApplication'
 local LrFunctionContext = import 'LrFunctionContext'
 
-local logger = import 'LrLogger'( PLUGIN_NAME )
-logger:enable( {"print", "logfile"} ) -- Enable logging to console
+local logger = import 'LrLogger'( Info.PLUGINNAME or "Debug" )
+logger:enable( Info.LOGGERTARGET or "logfile" ) -- Enable logging to console
 logger:info("*** CollectionMechanic loaded")
 
 require 'Util_StringUtils'
 require 'Util_CatalogUtils'
 require 'UI_MainDialog'
-require 'Info'
 
-local catalog = LrApplication.activeCatalog()
 
 --[[
 	Main entry point for the Collection Mechanic plugin.
 	Called when user selects the plugin from the menu.
 --]]
-local function showCollectionMechanicDialog()
+function CollectionMechanic.showCollectionMechanicDialog()
 	LrFunctionContext.postAsyncTaskWithContext("CollectionMechanic", function(context)
 		
 		-- Import SDK namespaces inside context
 		local LrBinding = import 'LrBinding'
 		local LrDialogs = import 'LrDialogs'
-		local LrLogger = import 'LrLogger'
 		
 		-- Get all available collection sets
 		local collectionSetOptions = CatalogUtils.getAllCollectionSets()
@@ -54,10 +53,10 @@ local function showCollectionMechanicDialog()
 		-- Define button callbacks
 		local callbacks = {
 			onDryRun = function()
-				performDryRun(props, collectionSetOptions)
+				CollectionMechanic.performDryRun(props, collectionSetOptions)
 			end,
 			onExecute = function()
-				performExecution(props, collectionSetOptions)
+				CollectionMechanic.performExecution(props, collectionSetOptions)
 			end,
 			onClose = function()
 				LrDialogs.stopModalDialog("ok")
@@ -81,9 +80,8 @@ end
 	@param props (table) Observable properties table
 	@param collectionSetOptions (array) Collection set options
 --]]
-local function performDryRun(props, collectionSetOptions)
-	local LrLogger = import 'LrLogger'
-	LrLogger.info("Starting dry run...")
+function CollectionMechanic.performDryRun(props, collectionSetOptions)
+	logger:info("Starting dry run...")
 	
 	-- Validate input
 	if not props.selectedCollectionSet then
@@ -137,7 +135,7 @@ local function performDryRun(props, collectionSetOptions)
 	local summary = string.format("Dry Run Results: %d valid name(s) ready to be created", validCount)
 	UIManager.showResultsDialog("Dry Run Preview", results, summary)
 	
-	LrLogger.info("Dry run completed. Valid names: " .. validCount)
+	logger:info("Dry run completed. Valid names: " .. validCount)
 end
 
 --[[
@@ -146,9 +144,8 @@ end
 	@param props (table) Observable properties table
 	@param collectionSetOptions (array) Collection set options
 --]]
-local LrLogger = import 'LrLogger'
-	local function performExecution(props, collectionSetOptions)
-	LrLogger.info("Starting execution...")
+function CollectionMechanic.performExecution(props, collectionSetOptions)
+	logger:info("Starting execution...")
 	
 	-- Validate input
 	if not props.selectedCollectionSet then
@@ -209,7 +206,7 @@ local LrLogger = import 'LrLogger'
 	end
 	
 	-- Create collections
-	LrLogger.info("Creating " .. #sanitizedNames .. " collection(s)...")
+	logger:info("Creating " .. #sanitizedNames .. " collection(s)...")
 	local creationResults = CatalogUtils.createCollections(props.selectedCollectionSet, sanitizedNames)
 	
 	local successful = creationResults.successful
@@ -246,8 +243,8 @@ local LrLogger = import 'LrLogger'
 	
 	UIManager.showResultsDialog("Execution Results", displayResults, summary)
 	
-	LrLogger.info("Execution completed. Created: " .. successCount .. ", Failed: " .. failureCount)
+	logger:info("Execution completed. Created: " .. successCount .. ", Failed: " .. failureCount)
 end
 
 -- Entry point
-showCollectionMechanicDialog()
+CollectionMechanic.showCollectionMechanicDialog()

@@ -6,12 +6,12 @@
 
 CatalogUtils = {}
 
+require 'Info'
+
 local LrApplication = import 'LrApplication'
 
-local catalog = LrApplication.activeCatalog()
-local logger = import 'LrLogger'( PLUGIN_NAME )
--- local logger = import 'LrLogger'( 'CollectionMechanic' )
-
+local logger = import 'LrLogger'( Info.PLUGINNAME or "Debug" )
+logger:enable( Info.LOGGERTARGET or "logfile" ) -- Enable logging to console
 logger:info("*** CatalogUtils module loaded")
 
 --[[
@@ -21,6 +21,7 @@ logger:info("*** CatalogUtils module loaded")
 --]]
 function CatalogUtils.getAllCollectionSets()
 	local options = {}
+	local catalog = LrApplication.activeCatalog()
 	
 	-- Get top-level collection sets
 	local topSets = catalog:getChildCollectionSets()
@@ -74,16 +75,16 @@ end
 function CatalogUtils.createCollections(collectionSet, collectionNames)
 	local successful = {}
 	local failed = {}
-	local LrLogger = import 'LrLogger'
+	local catalog = LrApplication.activeCatalog()
 	
 	if not collectionSet or not collectionNames or #collectionNames == 0 then
-		LrLogger.warn("Invalid arguments to createCollections")
+		logger:warn("Invalid arguments to createCollections")
 		return { successful = successful, failed = failed }
 	end
 	
 	-- Check if catalog is accessible for writing
 	if not catalog:canFileAccess() then
-		LrLogger.warn("Catalog file access not available")
+		logger:warn("Catalog file access not available")
 		failed = {
 			{
 				collectionName = "N/A",
@@ -115,7 +116,7 @@ function CatalogUtils.createCollections(collectionSet, collectionNames)
 				
 				if ok and result then
 					success = true
-					LrLogger.info("Created collection: " .. collectionName)
+					logger:info("Created collection: " .. collectionName)
 					table.insert(successful, {
 						collectionName = collectionName,
 						status = "OK",
@@ -123,7 +124,7 @@ function CatalogUtils.createCollections(collectionSet, collectionNames)
 					})
 				else
 					errorMsg = tostring(result) or "Unknown error"
-					LrLogger.warn("Failed to create collection: " .. collectionName .. " - " .. errorMsg)
+					logger:warn("Failed to create collection: " .. collectionName .. " - " .. errorMsg)
 					table.insert(failed, {
 						collectionName = collectionName,
 						status = "ERROR",
@@ -135,7 +136,7 @@ function CatalogUtils.createCollections(collectionSet, collectionNames)
 		{
 			timeout = 60,
 			callback = function()
-				LrLogger.warn("Collection creation operation timed out")
+				logger:warn("Collection creation operation timed out")
 			end
 		}
 	)
