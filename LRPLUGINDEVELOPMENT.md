@@ -78,6 +78,7 @@ e.g.
 Info = {}
 
 Info.PLUGINNAME = "<Plugin-Name>"
+Info.LOGGERTARGET = "logfile" -- Options: "print" or "logfile"
 ```
 
 Other modules and scripts can then load this file and access the values without hardcoding them in multiple locations. e.g.
@@ -139,6 +140,27 @@ LrFunctionContext.postAsyncTaskWithContext("<Menu Item Name>", function(context)
 
 ### General
 
-Imports
+#### Imports
 
-- Lightroom SDK namespaces should be imported at the module level, toward the top of the file.
+- Lightroom SDK namespaces should be imported at the module level, toward the top of the file, unless they are context sensitive and should be imported within the function or function context using the import.
+
+#### Logging
+
+- Lightroom logging should be enabled in PluginInit or at the module level. e.g.
+
+```lua
+local logger = import 'LrLogger'( Info.PLUGINNAME or "Debug" )
+logger:enable( Info.LOGGERTARGET or "logfile" ) -- Enable logging to console
+```
+
+- If Lightroom logging was enabled in PluginInit it should then be accessed at the module level by importing with the same name. Repeating the `logger:enable` is not necessary. e.g.
+
+```lua
+local logger = import 'LrLogger'( Info.PLUGINNAME or "Debug" )
+```
+
+- Logging is via an object method e.g. `logger:info`. Available logging methods: fatal, error, warn, info, debug, or trace.
+
+```lua
+logger:info("<message text goes here>")
+```

@@ -26,14 +26,23 @@ The Collection Mechanic is a Lightroom Classic plugin that enables users to crea
 The plugin presents a modal dialog with the following components:
 
 1. **Collection Set Selector**
-   - Label: "Root Collection Set"
-   - Type: Popup/dropdown menu
-   - Content: List of all collection sets in the Lightroom catalog
-   - Behavior: 
-     - Dynamically populated at plugin launch
-     - Displays collection set names in hierarchical format (e.g., "Parent » Child")
-     - Requires selection before execution
-     - Default: Empty (user must select)
+    1. Control 1
+        - Label: "Search"
+        - Type: Text field
+        - Content: Down select available collection sets
+        - Behavior: 
+            - User enters fragment of a collection set name
+            - Root Collection Set control will shrink the list to only show collection sets that match, along with their parent and child collection sets 
+            - Default: Empty (user must enter, if using the search function)
+    2. Control 2
+        - Label: "Root Collection Set"
+        - Type: Popup/dropdown menu
+        - Content: List of all collection sets in the Lightroom catalog
+        - Behavior: 
+            - Dynamically populated at plugin launch
+            - Displays collection set names in hierarchical format (e.g., "Parent » Child")
+            - Requires selection before execution
+            - Default: Empty (user must select)
 
 2. **Collection Names Input**
    - Label: "Collection Names (one per line)"
@@ -44,7 +53,7 @@ The plugin presents a modal dialog with the following components:
      - Each line represents one collection to create
      - Trimmed of leading/trailing whitespace per line
      - Empty lines are ignored
-     - No character validation in input (full transformation happens in dry-run)
+     - No character validation in input (full transformation happens in both dry-run and execution)
 
 3. **Dry Run Button**
    - Label: "Dry Run"
@@ -162,9 +171,9 @@ All characters are acceptable EXCEPT those reserved by the file system or Lightr
 
 **Processing:**
 1. Sanitize all collection names (same as dry run)
-2. Within Lightroom's write access context (`LrCatalog.withWriteAccessDo`):
+2. Within Lightroom's write access context (`catalog:withWriteAccessDo`):
    - Iterate through sanitized collection names
-   - Call `LrCatalog.createCollection(sanitizedName, selectedCollectionSet)`
+   - Call `catalog:createCollection(sanitizedName, selectedCollectionSet)`
    - Track creation status (success or failure reason)
 3. If a collection with the same name already exists:
    - Use `canReturnPrior=true` parameter to avoid duplicate error
@@ -194,55 +203,75 @@ lrcollectionmechanic.lrdevplugin/
 
 ### 3.2 File Responsibilities
 
+Each file will define an object with all methods and properties being defined against that object.
+
 #### Info.lua
-- Plugin metadata (name, version, SDK version)
-- Menu item registration (add to Library menu)
+- Returns standard Lightroom plugin metadata (name, version, SDK version)
+- Info object defines static plugin-wide values (PLUGINNAME, LOGGERTARGET)
+- Menu item registration (add to Library and Plug-in Extras menus)
 - Entry point file
+- Plugin initialisation file
 
 #### CollectionMechanic.lua
+- CollectionMechanic object
 - Main orchestrator
 - Dialog initialization and management
 - Dry run and execute workflows
 - Event handling
 
 #### UI_MainDialog.lua
+- MainDialog object
 - LrView layout definitions
 - LrBinding property bindings
 - Button callbacks
 - Result dialog presentations
 
 #### Util_StringUtils.lua
+- StringUtils object
 - `sanitizeCollectionName(name)` - Apply sanitization rules
 - `isValidCollectionName(name)` - Validate final name
 - Character replacement logic
 
 #### Util_CatalogUtils.lua
+- CatalogUtils object
 - `getCollectionSets()` - Retrieve all collection sets
 - `createCollections(collectionSet, names)` - Batch create collections
 - Catalog access control handling
 
+#### PluginInit.lua
+- PluginInit object
+- Initiatlises logging functionality for the plugin
+- Log basic details about the plugin
+
 ### 3.3 Key Lightroom SDK Dependencies
 
-**Namespaces Used:**
+**Namespaces Used (Importable):**
 - `LrFunctionContext` - Context for function execution
 - `LrBinding` - Data binding between UI and properties
 - `LrView` - UI view factory
 - `LrDialogs` - Dialog presentation
+- `LrLogger` - Debug logging (optional but recommended)
+
+**Classes Used (Not importable):**
 - `LrCatalog` - Catalog access and write operations
 - `LrCollectionSet` - Collection set operations
 - `LrCollection` - Collection operations
-- `LrLogger` - Debug logging (optional but recommended)
 
 **API Methods Used:**
 
 | Method | Purpose |
 |--------|---------|
-| `LrCatalog.getChildCollectionSets()` | List all top-level collection sets |
-| `LrCollectionSet.getChildCollectionSets()` | List nested collection sets |
-| `LrCatalog.withWriteAccessDo(actionName, func)` | Acquire write access for catalog modifications |
-| `LrCatalog.createCollection(name, parent, canReturnPrior)` | Create a collection |
 | `LrDialogs.presentModalDialog(options)` | Display modal dialogs |
-| `LrLogger.info(msg)` | Log debug information |
+
+**Object Methods Used:**
+
+| Class | Method | Purpose |
+|--------|---------|
+| LrCatalog | `catalog:getChildCollectionSets()` | List all top-level collection sets |
+| LrCollectionSet | `collectionSet:getChildCollectionSets()` | List nested collection sets |
+| LrCatalog | `catalog:withWriteAccessDo(actionName, func)` | Acquire write access for catalog modifications |
+| LrCatalog | `catalog:createCollection(name, parent, canReturnPrior)` | Create a collection |
+| LrLogger | `logger:info(msg)` | Log debug information |
 
 ---
 
@@ -303,10 +332,10 @@ collectionSetOption = {
 
 ### 5.3 Logging
 
-- Log all operations to Lightroom's plugin console
+- Log all operations to Lightroom's plugin logfile 
 - Include: operation type, collection set name, input names, results
-- Use `LrLogger.info()` for informational messages
-- Use `LrLogger.warn()` for warnings
+- Use `logger:info()` for informational messages
+- Use `logger:warn()` for warnings
 - Maintain log level controlled by plugin preferences
 
 ---
@@ -377,8 +406,12 @@ collectionSetOption = {
 ### 7.4 Common Error Handling
 
 **Error: "Could not find namespace: LrCatalog"**
-- **Cause**: LrCatalog imported at module level before context established
-- **Solution**: Move `import 'LrCatalog'` inside the function that uses it
+- **Cause**: LrCatalog is a class and cannot be imported
+- **Solution**: Retrieve catalog via `local catalog = LrApplication.activeCatalog()` inside the function that uses it
+```lua
+local LrApplication = import 'LrApplication'
+local catalog = LrApplication.activeCatalog()
+```
 - **Prevention**: Follow import best practices in section 7.2
 
 **Error: "Unknown error during collection creation"**
@@ -389,7 +422,7 @@ collectionSetOption = {
 **Error: "Catalog file access not available"**
 - **Cause**: Lightroom is busy with another operation
 - **Solution**: Retry operation, inform user to wait
-- **Prevention**: Check `LrCatalog.canFileAccess()` before operations
+- **Prevention**: Check `catalog.hasWriteAccess` and `catalog:assertHasWriteAccess()` before operations
 
 ### 7.5 Performance ConsiderationsPractices
 
@@ -401,13 +434,14 @@ collectionSetOption = {
    - Example: `local LrView = import 'LrView'`
 
 2. **Function-Level Imports (Required for Catalog Access)**:
-   - `LrCatalog`, `LrLogger`, `LrDialogs` should be imported inside functions
+   - `LrCatalog`, `LrLogger`, `LrDialogs` should be imported or instantiated inside functions
    - Especially critical inside `LrFunctionContext.callWithContext()` blocks
    - Example:
      ```lua
      local function doSomething()
-         local LrCatalog = import 'LrCatalog'
-         -- Use LrCatalog here
+         local LrDialogs = import 'LrDialogs'
+         local catalog = LrApplication.activeCatalog()
+         -- Use LrDialogs and catalog here
      end
      ```
 
@@ -445,9 +479,9 @@ local LrBinding = import 'LrBinding'
 ```lua
 -- Inside function context:
 local function safeCreateCollection(name, parent)
-    local LrCatalog = import 'LrCatalog'
+    local catalog = LrApplication.activeCatalog()
     local ok, result = pcall(function()
-        return LrCatalog.createCollection(name, parent, true)
+        return catalog:createCollection(name, parent, true)
     end)
     return ok, result
 end
@@ -456,7 +490,7 @@ end
 **Checking Resource Availability**:
 ```lua
 -- Before catalog operations:
-if not LrCatalog.canFileAccess() then
+if not catalog.hasWriteAccess then
     -- Catalog is busy
     return false
 end
@@ -469,7 +503,7 @@ if not collectionSet:getName() then
     -- Collection set was deleted
     return false
 end
-```g operations
+```
 - Lazy-load collection sets on first access
 - Cache collection set list until dialog closes
 
@@ -532,6 +566,9 @@ Potential features for v2.0:
 - Preferences panel (character replacement options)
 - Bulk move photos to new collections
 - Export collection structure to file
+- Create smart collections
+- Duplicate a template collection set under another collection set, allowing replacement of text strings in the smart collection set name and selection criteria
+- Move collections and collection sets in one collection set to another collection set (using a two panes to show collection set and contents)
 
 ---
 
@@ -559,9 +596,16 @@ Potential features for v2.0:
 
 ---
 
+## 11. TODO
+
+- Main dialog - Dry Run and Execute buttons are fine, but the Close, OK and Cancel buttons all essentially do the same thing. Keep only 1 of those 3 buttons, then place the Dry Run and Execute buttons on the same line as the standard button(s).
+- Improve logging - efficently logging a summary of the key activities in the code.
+
+---
+
 ## Document History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | May 30, 2026 | Initial specification |
-
+| 1.1 | June 1, 2026 | Corrected issues that stopped plugin from running |
