@@ -8,6 +8,14 @@
 
 **Input**: User description: "Build a replacement specification based upon the existing specification within SPECIFICATION.md."
 
+## Clarifications
+
+### Session 2026-06-03
+
+- Q: When Execute runs a batch where some names sanitize to ERROR and others are valid, what happens? → A: Create all names that sanitize successfully; include ERROR names in the results summary with their reason — partial success is allowed.
+- Q: Are duplicate detection (FR-012) and the collection set filter (FR-011/FR-016) case-sensitive or case-insensitive? → A: Case-insensitive for both.
+- Q: Is there a maximum number of collection names that can be submitted in a single batch? → A: No enforced limit — accept any number of names.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Batch Create Collections (Priority: P1)
@@ -129,17 +137,19 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
 - **FR-006**: The plugin MUST trim leading and trailing whitespace from each collection name.
 - **FR-007**: The plugin MUST skip blank lines in the collection names input.
 - **FR-008**: The plugin MUST display a results summary after Execute showing the count of
-  collections created and details of any failures.
+  collections created and, for each name that resulted in ERROR status, the name and reason it
+  was skipped — partial success (some created, some errored) is a valid outcome.
 - **FR-009**: The plugin MUST prevent execution when no collection set is selected, with a clear
   error message.
-- **FR-010**: The plugin MUST prevent execution when no valid collection names are provided,
-  with a clear error message.
+- **FR-010**: The plugin MUST prevent execution only when *no* collection names would produce a
+  valid sanitized name (i.e., the entire batch is ERROR); if at least one name is valid, Execute
+  MUST proceed and report per-name outcomes.
 - **FR-011**: The plugin MUST provide a filter/search field within the main dialog that narrows
-  the collection set selector by partial name match.
+  the collection set selector by case-insensitive partial name match.
 - **FR-016**: The filter/search field MUST appear above the collection set selector within the
   same dialog section, so the user filters first and then selects.
-- **FR-012**: If a collection with the same name already exists in the target set, the plugin
-  MUST treat it as a success rather than an error.
+- **FR-012**: If a collection with the same name already exists in the target set (compared
+  case-insensitively), the plugin MUST treat it as a success rather than an error.
 - **FR-013**: The plugin MUST display collection sets in a hierarchical format to distinguish
   sets with the same name at different levels.
 - **FR-014**: The plugin MUST be accessible from both the Library menu and the Plug-in Extras
@@ -196,6 +206,8 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
 - The catalog contains at least one collection set for the destination selector to populate.
 - Collection names up to 255 characters are considered valid; names exceeding this limit are
   treated as errors.
+- There is no enforced upper limit on the number of collection names submitted in a single
+  batch; the plugin accepts any quantity.
 - Unicode characters that are not in the reserved list are acceptable in collection names.
 - The plugin does not need to support undo — Lightroom's catalog undo system covers collection
   creation.

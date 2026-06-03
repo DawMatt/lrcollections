@@ -35,4 +35,7 @@
 - v2 amendment (2026-06-03): US3 clarified — filter field is part of the main dialog (not a
   separate dialog), and it sits above the collection set selector. FR-011 updated, FR-016
   added. All items still passing.
-- Spec is ready for `/speckit-clarify` (optional) or `/speckit-plan`.
+- v3 clarification session (2026-06-03): 3 questions answered — mixed-batch partial success,
+  case-insensitive matching, and no batch size limit. FR-008, FR-010, FR-011, FR-012 updated.
+  Assumptions section extended. All 12 items still passing.
+- Spec is ready for `/speckit-plan`.
