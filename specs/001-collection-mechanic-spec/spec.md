@@ -13,7 +13,7 @@
 ### Session 2026-06-03
 
 - Q: When Execute runs a batch where some names sanitize to ERROR and others are valid, what happens? → A: Create all names that sanitize successfully; include ERROR names in the results summary with their reason — partial success is allowed.
-- Q: Are duplicate detection (FR-012) and the collection set filter (FR-011/FR-016) case-sensitive or case-insensitive? → A: Case-insensitive for both.
+- Q: Are duplicate detection (FR-012) and the collection set filter field (FR-011/FR-016) case-sensitive or case-insensitive? → A: Case-insensitive for both.
 - Q: Is there a maximum number of collection names that can be submitted in a single batch? → A: No enforced limit — accept any number of names.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -82,8 +82,9 @@ status indicator, and confirm no collections have been created in the catalog.
 Within the main plugin dialog, a user working with a large Lightroom catalog needs to quickly
 narrow down the collection set list without scrolling through hundreds of entries. A filter
 field sits above the collection set selector in the same dialog: the user types any fragment of
-a set name and the selector immediately shrinks to show only matching sets (together with their
-parent and child sets for context).
+a set name and the selector immediately shrinks to show only matching entries. Each entry
+displays its full ancestry path (e.g., "Events » 2024 » Summer"), so the collection set's
+context within the hierarchy is always visible regardless of which level matches.
 
 **Why this priority**: The core dialog already works without the filter (US1 and US2 are
 independently functional), but the filter is essential for usability in large catalogs.
@@ -96,13 +97,14 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
 **Acceptance Scenarios**:
 
 1. **Given** the main plugin dialog is open, **When** the collection set section is displayed,
-   **Then** a filter/search field appears above the collection set selector within the same dialog.
+   **Then** a filter field appears above the collection set selector within the same dialog.
 2. **Given** the filter field is empty, **When** the collection set selector is displayed,
    **Then** all collection sets in the catalog are listed with hierarchy indicated
    (e.g., "Parent » Child » Grandchild").
 3. **Given** text is entered in the filter field, **When** the collection set selector updates,
-   **Then** only sets whose names contain the filter text are shown, along with their parent and
-   child sets for context.
+   **Then** only entries whose full hierarchical display name contains the filter text
+   (case-insensitive) are shown — ancestry is visible via the display name
+   (e.g., filtering "2024" shows "Events » 2024 » Summer" with the parent path included).
 4. **Given** the filter field is cleared, **When** the selector updates, **Then** all collection
    sets reappear.
 5. **Given** the user selects a collection set after filtering, **When** Execute or Dry Run
@@ -144,9 +146,9 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
 - **FR-010**: The plugin MUST prevent execution only when *no* collection names would produce a
   valid sanitized name (i.e., the entire batch is ERROR); if at least one name is valid, Execute
   MUST proceed and report per-name outcomes.
-- **FR-011**: The plugin MUST provide a filter/search field within the main dialog that narrows
+- **FR-011**: The plugin MUST provide a filter field within the main dialog that narrows
   the collection set selector by case-insensitive partial name match.
-- **FR-016**: The filter/search field MUST appear above the collection set selector within the
+- **FR-016**: The filter field MUST appear above the collection set selector within the
   same dialog section, so the user filters first and then selects.
 - **FR-012**: If a collection with the same name already exists in the target set (compared
   case-insensitively), the plugin MUST treat it as a success rather than an error.
