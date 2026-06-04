@@ -1,17 +1,13 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 1.1.0
-Modified principles:
-  - I. LR SDK Compliance: added LrPlugin class (accessed via _PLUGIN variable)
-  - V. Observability: corrected logging convention — other modules MUST NOT call
-    logger:enable() again; corrected Info.LOGGERTARGET default to "logfile"
+Version change: 1.1.0 → 1.2.0
+Modified principles: None
 Added sections:
-  - LR Plugin Layout Standards: PluginInit.lua registration via LrInitPlugin
-  - LR Plugin Layout Standards: two-cause require error diagnostic
+  - Development Workflow & Quality Gates: item 6 — Spec-First Change Order (new)
 Removed sections: None
 Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ Constitution Check table still aligned (Principles I–V unchanged in identity)
+  - .specify/templates/plan-template.md ✅ Constitution Check table updated (row VI added)
   - .specify/templates/spec-template.md ✅ No structural changes required
   - .specify/templates/tasks-template.md ✅ No structural changes required
 Deferred TODOs: None
@@ -150,6 +146,17 @@ Rules:
    dry-run/preview mode that shows intended changes without touching the catalog.
 5. **No external I/O**: Plugin operations MUST NOT make external network calls or access the
    file system beyond Lightroom's own catalog and plugin directory.
+6. **Spec-first change order**: Any design decision, bug fix, or requirement change MUST be
+   expressed in the spec (`spec.md`, `ui-contract.md`, or equivalent design document) BEFORE
+   tasks or code are created or modified to reflect it. The permitted change sequence is
+   strictly: **spec → tasks → code**. Tasks and code MUST NOT be written to decisions that
+   are not yet captured in the spec. If a change is discovered during implementation (e.g.,
+   via a bug report, checklist finding, or runtime behaviour), update the relevant spec
+   artifact first, then revise the tasks, then update the code.
+
+**Rationale for VI**: Prevents undocumented decisions from accumulating in code and tasks
+while the spec remains stale. Ensures the spec stays the authoritative source of truth and
+that future developers can understand *why* the code is the way it is.
 
 ## Governance
 
@@ -166,9 +173,9 @@ conflict explicitly before implementing.
 - After amendment, run `/speckit-constitution` to propagate updates to templates.
 
 **Compliance review**: Every plan's Constitution Check section MUST explicitly confirm or flag
-violations against Principles I–V before implementation is approved.
+violations against Principles I–V and Workflow Gate VI before implementation is approved.
 
 **Runtime development guidance**: See `LRPLUGINDEVELOPMENT.md` for Lightroom-specific Lua
 patterns, SDK class/namespace tables, and worked examples.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04
+**Version**: 1.2.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04
