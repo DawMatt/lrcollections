@@ -49,6 +49,7 @@ Verify each principle before proceeding:
 | III. Safe Catalog Operations | pcall used; objects verified before use; user-facing errors are clear | ☐ Pass / ☐ Violation |
 | IV. Thin Entry Points | Menu-item files contain only context setup + delegation | ☐ Pass / ☐ Violation |
 | V. Observability | LrLogger enabled once in PluginInit.lua; other modules re-import without re-enabling; Info.LOGGERTARGET controls target; operations logged with inputs + outcome | ☐ Pass / ☐ Violation |
+| VI. Spec-First Change Order | All decisions in this plan are expressed in spec/ui-contract before tasks or code are written; no undocumented design choices | ☐ Pass / ☐ Violation |
 
 > Any violation MUST be documented in the Complexity Tracking table below with justification.
 
