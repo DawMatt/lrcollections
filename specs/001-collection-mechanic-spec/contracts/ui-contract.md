@@ -84,10 +84,14 @@ a second invocation while an operation is in progress. The buttons are not visua
 (LR SDK limitation) but clicks are silently ignored until the current operation completes.
 
 **Async task requirement**: Button action callbacks run on Lightroom's C event loop and MUST
-wrap their entire body in `LrTasks.startAsyncTask(function() ... end)` before making any SDK
-call that may yield (catalog reads, `getName()`, `LrDialogs`, `withWriteAccessDo`, etc.).
-Calling a yielding SDK method directly from a button callback produces a fatal
-"Yielding is not allowed within a C or metamethod call" error at runtime.
+wrap their entire body in `LrFunctionContext.postAsyncTaskWithContext(name, function(context) ... end)`
+before making any SDK call that may yield (catalog reads, `getName()`, `LrDialogs`,
+`withWriteAccessDo`, `createCollection`, etc.). `LrTasks.startAsyncTask` is insufficient —
+it creates a plain Lua coroutine that does not integrate with LR's internal task scheduler,
+so catalog write operations still fail with "Yielding is not allowed within a C or metamethod
+call". `postAsyncTaskWithContext` creates a full LR function context that supports catalog
+yields. Additionally, `pcall` MUST NOT wrap LR SDK calls that yield — in Lua 5.1, yielding
+from within a `pcall` body (a C function) is also forbidden; check return values instead.
 
 ---
 

@@ -1,6 +1,6 @@
 require "Info"
-local LrLogger = import 'LrLogger'
-local LrTasks  = import 'LrTasks'
+local LrLogger          = import 'LrLogger'
+local LrFunctionContext = import 'LrFunctionContext'
 local logger = LrLogger(Info.PLUGINNAME)
 
 UIMainDialog = {}
@@ -99,7 +99,7 @@ local function showDryRunResultsDialog(entries)
         title      = "Dry Run Results",
         contents   = contents,
         actionVerb = "Close",
-        cancelVerb = "< no cancel >",
+        cancelVerb = "< exclude >",
     }
 end
 
@@ -151,7 +151,7 @@ local function showExecutionResultsDialog(results)
         title      = "Execution Results",
         contents   = contents,
         actionVerb = "Close",
-        cancelVerb = "< no cancel >",
+        cancelVerb = "< exclude >",
     }
 end
 
@@ -162,12 +162,13 @@ function UIMainDialog.createMainDialog(props)
     local executing = false  -- re-entrance guard for Dry Run and Execute
 
     -- Button callbacks run in Lightroom's C event loop and cannot yield.
-    -- LrTasks.startAsyncTask re-enters a Lua coroutine context where SDK calls that
-    -- yield (catalog reads, LrDialogs) are permitted.
+    -- LrFunctionContext.postAsyncTaskWithContext creates a full LR function context
+    -- that integrates with LR's task scheduler, enabling catalog writes to yield correctly.
+    -- (LrTasks.startAsyncTask is insufficient — it does not register with LR's scheduler.)
     local function onDryRun()
         if executing then return end
         executing = true
-        LrTasks.startAsyncTask(function()
+        LrFunctionContext.postAsyncTaskWithContext("CollectionMechanic.DryRun", function(_context)
             local entries = validateDryRun(props)
             if not entries then executing = false; return end
             props.dryRunResults = entries
@@ -186,7 +187,7 @@ function UIMainDialog.createMainDialog(props)
     local function onExecute()
         if executing then return end
         executing = true
-        LrTasks.startAsyncTask(function()
+        LrFunctionContext.postAsyncTaskWithContext("CollectionMechanic.Execute", function(_context)
             local entries = validateExecute(props)
             if not entries then executing = false; return end
             local targetSet = props.selectedCollectionSet  -- {displayName, object}

@@ -47,9 +47,12 @@ is available for LR SDK interactions; Lightroom's sandbox prevents external test
 - Sub-directory `require` is not supported — all Lua files must be at plugin root
 - New files added after Lightroom launch require a full Lightroom restart to be detected
 - Button action callbacks in `presentModalDialog` run on LR's C event loop and cannot yield;
-  any SDK call that yields (catalog reads, `getName()`, `LrDialogs`, `withWriteAccessDo`)
-  MUST be made inside `LrTasks.startAsyncTask(function() ... end)`, not directly in the
-  callback
+  any SDK call that yields MUST be wrapped in
+  `LrFunctionContext.postAsyncTaskWithContext(name, function(context) ... end)`.
+  `LrTasks.startAsyncTask` is insufficient — catalog writes still fail because it does not
+  register the task with LR's internal scheduler. Additionally, `pcall` MUST NOT wrap LR SDK
+  calls that yield (Lua 5.1 cannot yield across a `pcall` C boundary); use return-value
+  checks instead
 
 **Scale/Scope**: Single user, single active catalog, no enforced batch size limit
 

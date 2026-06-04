@@ -1,16 +1,23 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.2.0 → 1.3.0
-Modified principles: None
+Version change: 1.3.0 → 1.4.0
+Modified principles:
+  - III. Safe Catalog Operations: pcall guidance corrected — pcall MUST NOT wrap LR SDK
+    calls that yield (Lua 5.1 C-boundary restriction); use return-value checks instead.
+    pcall remains appropriate for pure Lua operations that do not yield.
 Added sections:
-  - Development Workflow & Quality Gates: item 6 — Spec-First Change Order (new)
-  - Principle II: Lua 5.1 stdlib constraint (table.unpack does not exist; use global unpack)
+  - LR Plugin Layout Standards: UI Dialog Standards (cancelVerb convention)
 Removed sections: None
 Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ Constitution Check table updated (row VI added)
+  - .specify/templates/plan-template.md ✅ Constitution Check table Principle III description
+    updated to reflect pcall correction
   - .specify/templates/spec-template.md ✅ No structural changes required
   - .specify/templates/tasks-template.md ✅ No structural changes required
+Follow-up action:
+  - Code in CollectionMechanic.lua, UI__MainDialog.lua uses cancelVerb = "< no cancel >".
+    LRPLUGINDEVELOPMENT.md now documents "< exclude >" as the standard. Verify in Lightroom
+    whether the current value still suppresses Cancel; if not, update code to "< exclude >".
 Deferred TODOs: None
 -->
 
@@ -74,15 +81,21 @@ that invokes it.
 All interactions with the Lightroom catalog MUST be defensive:
 
 - Write operations MUST use `catalog:withWriteAccessDo(actionName, func)`.
-- Operations that may fail (collection creation, object method calls on potentially deleted
-  objects) MUST be wrapped in `pcall()`.
+- LR SDK calls that may **yield** (catalog reads, `createCollection`, `withWriteAccessDo`,
+  `getName()` on catalog objects, etc.) MUST NOT be wrapped in `pcall`. In Lua 5.1, `pcall`
+  is a C function — yielding from within its body throws "Yielding is not allowed within a
+  C or metamethod call". Use the **return value** to detect failure instead (e.g. check
+  `result ~= nil`).
+- `pcall` MAY be used for **pure Lua operations** that do not invoke LR SDK calls and
+  therefore cannot yield (e.g. string parsing, table manipulation).
 - Before relying on a retrieved object (e.g. a collection set), existence MUST be verified
   (e.g. check `collectionSet:getName()` does not return nil).
 - Error messages shown to the user MUST be clear and actionable; raw SDK errors MUST NOT be
   surfaced verbatim.
 
 **Rationale**: Lightroom catalog state can change while a plugin is running. Unguarded errors
-crash the plugin dialog with no user-recoverable path.
+crash the plugin dialog with no user-recoverable path. The `pcall` restriction is a Lua 5.1
+coroutine boundary rule — mixing pcall with yielding SDK calls is a silent failure source.
 
 ### IV. Thin Entry Points
 
@@ -142,6 +155,23 @@ Rules:
   2. **New/renamed script after startup**: reloading the plugin does not detect newly created
      or renamed scripts. Lightroom MUST be restarted to pick up these changes.
 
+## UI Dialog Standards
+
+### LrDialogs.presentModalDialog
+
+- To suppress the Cancel button and show only the action button, set
+  `cancelVerb = "< exclude >"` in the args table.
+- To relabel the action button (default is "OK"), set `actionVerb = "<label>"`.
+- Button callbacks registered inside the dialog content (e.g. `push_button` action functions)
+  run on Lightroom's C event loop. Any callback that makes LR SDK calls which may yield MUST
+  wrap its body in `LrFunctionContext.postAsyncTaskWithContext(name, function(context) ... end)`.
+  `LrTasks.startAsyncTask` is insufficient — it creates a plain Lua coroutine without a full
+  LR function context, so catalog write operations fail with yield errors.
+
+**Rationale**: `cancelVerb = "< exclude >"` is the documented SDK convention for single-button
+dialogs. The async-task requirement prevents "Yielding is not allowed within a C or metamethod
+call" errors that only surface at runtime on the affected code path.
+
 ## Development Workflow & Quality Gates
 
 1. **Specification first**: Features MUST have a spec (`SPECIFICATION.md` or
@@ -187,4 +217,4 @@ violations against Principles I–V and Workflow Gate VI before implementation i
 **Runtime development guidance**: See `LRPLUGINDEVELOPMENT.md` for Lightroom-specific Lua
 patterns, SDK class/namespace tables, and worked examples.
 
-**Version**: 1.3.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04
+**Version**: 1.4.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04

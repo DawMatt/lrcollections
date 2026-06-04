@@ -46,7 +46,7 @@ Verify each principle before proceeding:
 |-----------|-------|--------|
 | I. LR SDK Compliance | Only namespaces imported; LrCatalog/LrCollection/LrCollectionSet/LrPlugin accessed via methods or `_PLUGIN`, not imported; catalog access inside functions; writes use `withWriteAccessDo` | ☐ Pass / ☐ Violation |
 | II. Lua Module Conventions | Double-underscore prefixes used; no sub-directory require; constants in Info.lua | ☐ Pass / ☐ Violation |
-| III. Safe Catalog Operations | pcall used; objects verified before use; user-facing errors are clear | ☐ Pass / ☐ Violation |
+| III. Safe Catalog Operations | Yielding SDK calls use return-value checks (NOT pcall); pure-Lua-only operations may use pcall; objects verified before use; user-facing errors are clear | ☐ Pass / ☐ Violation |
 | IV. Thin Entry Points | Menu-item files contain only context setup + delegation | ☐ Pass / ☐ Violation |
 | V. Observability | LrLogger enabled once in PluginInit.lua; other modules re-import without re-enabling; Info.LOGGERTARGET controls target; operations logged with inputs + outcome | ☐ Pass / ☐ Violation |
 | VI. Spec-First Change Order | All decisions in this plan are expressed in spec/ui-contract before tasks or code are written; no undocumented design choices | ☐ Pass / ☐ Violation |

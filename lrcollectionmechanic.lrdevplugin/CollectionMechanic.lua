@@ -55,7 +55,7 @@ function CollectionMechanic.showCollectionMechanicDialog()
             title      = "Collection Mechanic",
             contents   = contents,
             actionVerb = "Close",
-            cancelVerb = "< no cancel >",
+            cancelVerb = "< exclude >",
         }
     end)
 end

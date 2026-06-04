@@ -64,18 +64,18 @@ function CatalogUtils.createCollections(targetSet, entries, targetName)
                         errorMessage  = nil,
                     })
                 else
-                    local ok, created = pcall(function()
-                        return catalog:createCollection(entry.sanitizedName, targetSet, true)
-                    end)
+                    -- No pcall: in Lua 5.1, pcall prevents yields, and createCollection
+                    -- needs to yield to commit the write. Check the return value for nil instead.
+                    local created = catalog:createCollection(entry.sanitizedName, targetSet, true)
                     local resultEntry = {
                         originalName  = entry.originalName,
                         sanitizedName = entry.sanitizedName,
                         status        = entry.status,
-                        created       = ok and created ~= nil,
-                        errorMessage  = ok and nil or tostring(created),
+                        created       = created ~= nil,
+                        errorMessage  = created == nil and "Failed to create collection" or nil,
                     }
-                    if not ok then
-                        logger:warn("createCollections: failed to create '" .. entry.sanitizedName .. "': " .. tostring(created))
+                    if created == nil then
+                        logger:warn("createCollections: failed to create '" .. entry.sanitizedName .. "' (returned nil)")
                     end
                     table.insert(results, resultEntry)
                 end

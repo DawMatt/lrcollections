@@ -67,6 +67,12 @@ require 'rightfilename'  -- Actual script name: rightfilename.lua
 
 Reloading a plugin does not detect new or renamed scripts. Restart Lightroom to detect these changes.
 
+### UI
+
+#### LrDialogs.presentModalDialog(args)
+
+- To remove the cancel button, args.cancelVerb must have a value of "< exclude >".
+
 ## Lightroom Classic Plugin Layout
 
 ### Info.lua
