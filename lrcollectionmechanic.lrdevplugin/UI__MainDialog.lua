@@ -4,10 +4,12 @@ local logger = LrLogger(Info.PLUGINNAME)
 
 UIMainDialog = {}
 
+-- Popup items: placeholder value = false; real items value = {displayName, object}
+-- Storing the full item avoids calling getName() in button callbacks (which yields in C context)
 local function buildPopupItems(sets)
-    local items = { { title = "\xe2\x80\x94 Select a collection set \xe2\x80\x94", value = false } }
+    local items = { { title = "-- Select a collection set --", value = false } }
     for _, item in ipairs(sets) do
-        table.insert(items, { title = item.displayName, value = item.object })
+        table.insert(items, { title = item.displayName, value = item })
     end
     return items
 end
@@ -92,7 +94,12 @@ local function showDryRunResultsDialog(entries)
             f:column(tableRows),
         },
     }
-    LrDialogs.presentModalDialog { title = "Dry Run Results", contents = contents }
+    LrDialogs.presentModalDialog {
+        title      = "Dry Run Results",
+        contents   = contents,
+        actionVerb = "Close",
+        cancelVerb = "< no cancel >",
+    }
 end
 
 local function showExecutionResultsDialog(results)
@@ -109,9 +116,9 @@ local function showExecutionResultsDialog(results)
             errorCount = errorCount + 1
             table.insert(errorRows, f:row {
                 spacing = f:label_spacing(),
-                f:static_text { title = r.originalName,              width_in_chars = 24 },
-                f:static_text { title = r.sanitizedName,             width_in_chars = 24 },
-                f:static_text { title = r.errorMessage or "",        width_in_chars = 24 },
+                f:static_text { title = r.originalName,       width_in_chars = 24 },
+                f:static_text { title = r.sanitizedName,      width_in_chars = 24 },
+                f:static_text { title = r.errorMessage or "", width_in_chars = 24 },
             })
         end
     end
@@ -139,17 +146,25 @@ local function showExecutionResultsDialog(results)
     end
 
     local contents = f:column { spacing = f:control_spacing(), table.unpack(children) }
-    LrDialogs.presentModalDialog { title = "Execution Results", contents = contents }
+    LrDialogs.presentModalDialog {
+        title      = "Execution Results",
+        contents   = contents,
+        actionVerb = "Close",
+        cancelVerb = "< no cancel >",
+    }
 end
 
 -- Returns main dialog view for presentation by CollectionMechanic.lua
 function UIMainDialog.createMainDialog(props)
-    local LrView    = import 'LrView'
+    local LrView = import 'LrView'
     local f = LrView.osFactory()
+    local executing = false  -- re-entrance guard for Dry Run and Execute
 
     local function onDryRun()
+        if executing then return end
+        executing = true
         local entries = validateDryRun(props)
-        if not entries then return end
+        if not entries then executing = false; return end
         props.dryRunResults = entries
         local ok, mod, err = 0, 0, 0
         for _, e in ipairs(entries) do
@@ -159,16 +174,20 @@ function UIMainDialog.createMainDialog(props)
         end
         logger:info("Dry Run: OK=" .. ok .. " MODIFIED=" .. mod .. " ERROR=" .. err)
         showDryRunResultsDialog(entries)
+        executing = false
     end
 
     local function onExecute()
+        if executing then return end
+        executing = true
         local entries = validateExecute(props)
-        if not entries then return end
-        local targetSet = props.selectedCollectionSet
-        logger:info("Execute: target=" .. targetSet:getName() .. ", count=" .. #entries)
-        local results = CatalogUtils.createCollections(targetSet, entries)
+        if not entries then executing = false; return end
+        local targetSet = props.selectedCollectionSet  -- {displayName, object}
+        logger:info("Execute: target=" .. (targetSet.displayName or "?") .. ", count=" .. #entries)
+        local results = CatalogUtils.createCollections(targetSet.object, entries)
         props.executionResults = results
         showExecutionResultsDialog(results)
+        executing = false
     end
 
     return f:column {
@@ -178,18 +197,18 @@ function UIMainDialog.createMainDialog(props)
         -- Filter row
         f:row {
             spacing = f:label_spacing(),
-            f:static_text { title = "Filter", width = LrView.share("label_width") },
+            f:static_text { title = "Collection Set Filter", width = LrView.share("label_width") },
             f:edit_field {
                 value              = LrView.bind("filterText"),
                 width_in_chars     = 40,
-                placeholder_string = "Type to filter collection sets\xe2\x80\xa6",
+                placeholder_string = "Type to filter collection sets...",
             },
         },
 
         -- Collection Set selector
         f:row {
             spacing = f:label_spacing(),
-            f:static_text { title = "Collection Set", width = LrView.share("label_width") },
+            f:static_text { title = "Base Collection Set", width = LrView.share("label_width") },
             f:popup_menu {
                 value = LrView.bind {
                     key            = "selectedCollectionSet",
@@ -214,6 +233,10 @@ function UIMainDialog.createMainDialog(props)
             width_in_chars     = 50,
             font               = "<monospace>",
             placeholder_string = "Enter collection names, one per line",
+        },
+        f:static_text {
+            title   = "To add a new line: Option+Return (Mac) or Alt+Enter (Windows)",
+            enabled = false,
         },
 
         -- Button row: Dry Run + Execute left; Close is the standard action button (right, via presentModalDialog)

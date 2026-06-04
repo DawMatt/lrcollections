@@ -9,7 +9,7 @@ local function collectSets(parent, prefix, results)
     local sets = parent:getChildCollectionSets()
     for _, set in ipairs(sets) do
         local name = set:getName()
-        local display = prefix == "" and name or (prefix .. " \xc2\xbb " .. name)
+        local display = prefix == "" and name or (prefix .. " > " .. name)
         table.insert(results, { displayName = display, object = set })
         collectSets(set, display, results)
     end

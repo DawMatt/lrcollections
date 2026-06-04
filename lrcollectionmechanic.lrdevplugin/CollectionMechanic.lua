@@ -17,17 +17,17 @@ function CollectionMechanic.showCollectionMechanicDialog()
         local allSets = CatalogUtils.getCollectionSets()
 
         local props = LrBinding.makePropertyTable(context)
-        props.filterText            = ""
-        props.allCollectionSets     = allSets
+        props.filterText             = ""
+        props.allCollectionSets      = allSets
         props.filteredCollectionSets = allSets
-        props.selectedCollectionSet = nil
-        props.collectionNamesInput  = ""
-        props.dryRunResults         = {}
-        props.executionResults      = {}
+        props.selectedCollectionSet  = false  -- matches placeholder item value = false
+        props.collectionNamesInput   = ""
+        props.dryRunResults          = {}
+        props.executionResults       = {}
 
         logger:info("showCollectionMechanicDialog: loaded " .. #allSets .. " collection sets")
 
-        -- Filter observer: recompute filteredCollectionSets on every filterText change
+        -- Recompute filteredCollectionSets on every filterText change
         props:addObserver("filterText", function(_, _, newValue)
             local filter = newValue or ""
             if filter == "" then
@@ -44,11 +44,18 @@ function CollectionMechanic.showCollectionMechanicDialog()
             end
         end)
 
+        -- Clear previous Dry Run results when the names input is modified
+        props:addObserver("collectionNamesInput", function(_, _, _)
+            props.dryRunResults = {}
+        end)
+
         local contents = UIMainDialog.createMainDialog(props)
 
         LrDialogs.presentModalDialog {
-            title    = "Collection Mechanic",
-            contents = contents,
+            title      = "Collection Mechanic",
+            contents   = contents,
+            actionVerb = "Close",
+            cancelVerb = "< no cancel >",
         }
     end)
 end

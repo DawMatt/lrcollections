@@ -17,15 +17,19 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 ### Layout (top to bottom)
 
 ```
-┌─────────────────────────────────────────────┐
-│  [Label: "Filter"]  [Text field: filterText] │  ← Filter row
-│  [Label: "Collection Set"]  [Popup menu]     │  ← Selector row
-│  [Label: "Collection Names (one per line)"]  │
-│  [Multi-line text area: collectionNamesInput]│  ← Names input
-│─────────────────────────────────────────────│
-│  [Dry Run]  [Execute]           [Close]      │  ← Button row
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  [Label: "Collection Set Filter"]  [Text field]      │  ← Filter row
+│  [Label: "Base Collection Set"]    [Popup menu]      │  ← Selector row
+│  [Label: "Collection Names (one per line)"]          │
+│  [Multi-line text area: collectionNamesInput]        │  ← Names input
+│  [Hint: "Option+Return (Mac) or Alt+Enter (Win)"]    │
+│──────────────────────────────────────────────────────│
+│  [Dry Run]  [Execute]                    [Close]     │  ← Button row
+└──────────────────────────────────────────────────────┘
 ```
+
+**Initial focus**: On dialog open, keyboard focus MUST be placed on the Collection Set Filter
+field so the user can begin filtering immediately without a mouse click.
 
 ### Controls
 
@@ -33,7 +37,7 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 
 | Property | Value |
 |----------|-------|
-| Label | "Filter" |
+| Label | "Collection Set Filter" |
 | Type | Single-line text field |
 | Binding | `props.filterText` (two-way) |
 | Placeholder | "Type to filter collection sets…" |
@@ -44,12 +48,12 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 
 | Property | Value |
 |----------|-------|
-| Label | "Collection Set" |
+| Label | "Base Collection Set" |
 | Type | Popup/dropdown menu |
 | Binding | Items from `props.filteredCollectionSets`; selected value → `props.selectedCollectionSet` |
 | Placeholder item | "— Select a collection set —" (disabled, shown when nothing selected) |
 | Display format | `CollectionSetItem.displayName` (e.g., `"Events » 2024 » Summer"`) |
-| Behaviour | Populated from `filteredCollectionSets`. Filter changes update items without clearing the current selection if the selected item remains. |
+| Behaviour | Populated from `filteredCollectionSets`. Filter changes update items without clearing the current selection if the selected item remains. When `filteredCollectionSets` is empty (no sets match the filter), the popup shows only the placeholder item. |
 
 #### Collection Names Input
 
@@ -71,6 +75,10 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 
 **Button row position**: All three buttons on the same row, aligned to the bottom of the dialog.
 Dry Run and Execute on the left; Close is the standard action button on the right.
+
+**Re-entrance guard**: Dry Run and Execute MUST NOT be re-entrant. A boolean flag MUST prevent
+a second invocation while an operation is in progress. The buttons are not visually disabled
+(LR SDK limitation) but clicks are silently ignored until the current operation completes.
 
 ---
 

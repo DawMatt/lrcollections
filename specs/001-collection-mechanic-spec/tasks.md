@@ -117,7 +117,7 @@ even if hidden. Click Execute — operation uses the still-selected set.
 
 ### Implementation for User Story 3
 
-- [X] T024 [US3] Add filter field row above the collection set popup in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — single-line text field with label "Filter", bound two-way to `props.filterText`, placeholder "Type to filter collection sets…", positioned immediately above the collection set selector per ui-contract.md Filter Field spec
+- [X] T024 [US3] Add filter field row above the collection set popup in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — single-line text field with label "Collection Set Filter", bound two-way to `props.filterText`, placeholder "Type to filter collection sets...", positioned immediately above the collection set selector per ui-contract.md Filter Field spec; collection set popup label is "Base Collection Set"
 - [X] T025 [US3] Implement filter observer in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` or `UI__MainDialog.lua` — observe `props.filterText` changes; recompute `props.filteredCollectionSets` from `props.allCollectionSets` using `string.find(string.lower(displayName), string.lower(filterText), 1, true) ~= nil`; assign full list when `filterText` is empty (case-insensitive plain-text match per research.md D-003)
 - [X] T026 [US3] Verify selection-persistence in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — confirm `props.selectedCollectionSet` is NOT reset when `props.filteredCollectionSets` changes; Execute and Dry Run must use the stored selection regardless of current filter state
 

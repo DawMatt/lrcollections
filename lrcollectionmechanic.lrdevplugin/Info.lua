@@ -31,9 +31,11 @@ return {
 	-- Add the command to the Library menu and File > Plug-in Extras menu
 	LrLibraryMenuItems = menuItems,
 
+	LrInitPlugin = 'PluginInit.lua',
+
 	LrExportMenuItems = menuItems,
 
-	VERSION = { 
+	VERSION = {
 		major = 1, 
 		minor = 0, 
 		revision = 0, 

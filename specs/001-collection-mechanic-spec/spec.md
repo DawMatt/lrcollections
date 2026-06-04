@@ -129,7 +129,7 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
 - **FR-001**: The plugin MUST allow the user to select any collection set present in the active
   catalog as the destination for new collections.
 - **FR-002**: The plugin MUST accept multiple collection names as free-form text input, one name
-  per line.
+  per line. Line endings `\r\n` and `\r` MUST be normalised to `\n` before parsing.
 - **FR-003**: The plugin MUST provide a Dry Run action that shows a preview of all name
   transformations without creating any collections.
 - **FR-004**: The plugin MUST provide an Execute action that creates collections in the selected
@@ -196,8 +196,8 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
   between previewed and created names across all test cases.
 - **SC-003**: 100% of reserved characters in collection names are replaced during sanitization
   with no reserved characters present in any created collection name.
-- **SC-004**: The plugin handles a catalog containing 500+ collection sets without the dropdown
-  or search becoming unresponsive.
+- **SC-004**: The plugin handles a catalog containing 500+ collection sets with filter keystrokes
+  updating the collection set selector within 200ms per keystroke.
 - **SC-005**: Error messages are self-explanatory — a first-time user can resolve every
   validation error without consulting documentation.
 - **SC-006**: No unintended changes are made to the catalog during a Dry Run operation.
@@ -217,3 +217,9 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
 - The plugin operates on the currently active catalog only; multi-catalog scenarios are out of
   scope.
 - Mobile app synchronisation behaviour of collections is out of scope for this specification.
+- If the active catalog contains no collection sets, the plugin opens with an empty "Base
+  Collection Set" selector showing only the placeholder item; the user cannot proceed until
+  a collection set is available. No special empty-state UI is required.
+- Accessibility support (keyboard tab order, screen reader labels, keyboard shortcuts for
+  buttons) is explicitly deferred from v1 scope. Lightroom Classic SDK limitations prevent
+  full WCAG compliance.
