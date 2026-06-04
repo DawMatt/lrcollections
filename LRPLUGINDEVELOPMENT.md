@@ -135,6 +135,29 @@ LrFunctionContext.postAsyncTaskWithContext("<Menu Item Name>", function(context)
 
 ### PluginInit.lua
 
+PluginInit is used to perform preparation tasks that should only be executed once per plugin execution.
+
+At a minimum, we use this to enable logging. e.g.
+
+```lua
+require "Info"
+
+local LrLogger = import 'LrLogger'
+local logger = LrLogger(Info.PLUGINNAME)
+
+logger:enable(Info.LOGGERTARGET)
+logger:info("Plugin initialised: " .. Info.PLUGINNAME)
+```
+
+We then reference this within the Info.lua returned table. e.g.
+
+```lua
+return {
+    -- Other entries above here
+		LrInitPlugin = 'PluginInit.lua',
+    -- Other entries below here
+}
+```
 
 ## Lightroom Classic Plugin Conventions
 

@@ -1,16 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: [TEMPLATE] → 1.0.0
+Version change: 1.0.0 → 1.1.0
+Modified principles:
+  - I. LR SDK Compliance: added LrPlugin class (accessed via _PLUGIN variable)
+  - V. Observability: corrected logging convention — other modules MUST NOT call
+    logger:enable() again; corrected Info.LOGGERTARGET default to "logfile"
 Added sections:
-  - Core Principles (I–V)
-  - LR Plugin Layout Standards
-  - Development Workflow & Quality Gates
-  - Governance
-Modified principles: N/A (initial population)
-Removed sections: N/A (initial population)
+  - LR Plugin Layout Standards: PluginInit.lua registration via LrInitPlugin
+  - LR Plugin Layout Standards: two-cause require error diagnostic
+Removed sections: None
 Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ Constitution Check section aligned
+  - .specify/templates/plan-template.md ✅ Constitution Check table still aligned (Principles I–V unchanged in identity)
   - .specify/templates/spec-template.md ✅ No structural changes required
   - .specify/templates/tasks-template.md ✅ No structural changes required
 Deferred TODOs: None
@@ -25,8 +26,17 @@ Deferred TODOs: None
 Code MUST follow the Lightroom Classic SDK import rules precisely:
 
 - Only items documented as **namespaces** (or namespace+class) in the SDK reference MAY be
-  imported via `import 'Lr...'`. Pure classes (e.g. `LrCatalog`, `LrCollection`,
-  `LrCollectionSet`) MUST NOT be imported — they are obtained via object methods instead.
+  imported via `import 'Lr...'`. Pure classes MUST NOT be imported — they are obtained via
+  object methods or special variables instead.
+- The following classes and their access methods are documented; none may be imported:
+
+  | Class | Accessed Via |
+  |-------|-------------|
+  | `LrCatalog` | `LrApplication.activeCatalog()`, or the `catalog` property on contained objects |
+  | `LrCollection` | `catalog:getChildCollections()` or `collectionSet:getChildCollections()` |
+  | `LrCollectionSet` | `catalog:getChildCollectionSets()` or `collectionSet:getChildCollectionSets()` |
+  | `LrPlugin` | Built-in variable `_PLUGIN` |
+
 - Catalog access MUST be obtained inside a function via `LrApplication.activeCatalog()`, never
   at module level.
 - Context-sensitive SDK namespaces (`LrDialogs`, catalog objects) MUST be imported or
@@ -41,7 +51,8 @@ runtime and cannot be caught before the plugin is loaded into Lightroom.
 Every Lua source file MUST define a single named object table and expose all functionality
 through it:
 
-- Module-level imports (e.g. `LrView`, `LrBinding`) are acceptable at the top of the file.
+- Module-level imports (e.g. `LrView`, `LrBinding`) are acceptable at the top of the file,
+  unless they are context-sensitive and must be imported inside the function or context.
 - Sub-directory require is **not supported** by Lightroom. Files MUST reside in the plugin root
   and MUST use a double-underscore prefix as a namespace grouping signal
   (e.g. `Util__StringUtils.lua`, `UI__MainDialog.lua`). The prefix is omitted in the
@@ -84,13 +95,17 @@ async model.
 
 All meaningful plugin operations MUST be logged:
 
-- Logging MUST be initialised in `PluginInit.lua` (and optionally re-enabled at module level
-  where needed) using `LrLogger(Info.PLUGINNAME)`.
-- Log level and target (print / logfile) MUST be controlled by `Info.LOGGERTARGET` — not
-  hardcoded per module.
+- Logging MUST be initialised once in `PluginInit.lua` using `LrLogger(Info.PLUGINNAME)` with
+  `logger:enable(Info.LOGGERTARGET)`. `Info.LOGGERTARGET` defaults to `"logfile"` (options:
+  `"print"` or `"logfile"`).
+- Other modules that need the logger MUST access it by importing with the same plugin name:
+  `local logger = import 'LrLogger'( Info.PLUGINNAME )`. They MUST NOT call `logger:enable()`
+  again — the logger is already enabled from `PluginInit.lua`.
 - The available log levels are: `fatal`, `error`, `warn`, `info`, `debug`, `trace`.
   Use the appropriate level — do not log everything at `info`.
 - Operations logged MUST include: operation type, key inputs, and outcome.
+- `PluginInit.lua` MUST emit a startup log message to confirm the plugin loaded:
+  `logger:info("Plugin initialised: " .. Info.PLUGINNAME)`.
 
 **Rationale**: Lightroom plugins run inside a host application with no attached debugger.
 Structured log output is the primary diagnostic tool.
@@ -109,10 +124,18 @@ The plugin directory (`*.lrdevplugin/`) MUST conform to this layout:
 ```
 
 Rules:
+
 - `Info.lua` MUST be the plugin entry point and MUST define `LrLibraryMenuItems` and
-  `LrExportMenuItems` for any user-invocable functionality.
-- New scripts added after Lightroom is already running require a **Lightroom restart** to be
-  detected — plugin reload alone is insufficient. This MUST be communicated to developers.
+  `LrExportMenuItems` for any user-invocable functionality. Menu items MUST be defined via a
+  local variable and referenced in both menu keys.
+- `PluginInit.lua` MUST be registered in `Info.lua` via the `LrInitPlugin` key:
+  `LrInitPlugin = 'PluginInit.lua'`.
+- A `require` call will fail to load a script for two distinct reasons — both MUST be checked
+  when diagnosing a "Could not load toolkit script" error:
+  1. **Name mismatch**: the string passed to `require` does not exactly match the `.lua`
+     filename (case-sensitive, no extension).
+  2. **New/renamed script after startup**: reloading the plugin does not detect newly created
+     or renamed scripts. Lightroom MUST be restarted to pick up these changes.
 
 ## Development Workflow & Quality Gates
 
@@ -148,4 +171,4 @@ violations against Principles I–V before implementation is approved.
 **Runtime development guidance**: See `LRPLUGINDEVELOPMENT.md` for Lightroom-specific Lua
 patterns, SDK class/namespace tables, and worked examples.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-03
+**Version**: 1.1.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04
