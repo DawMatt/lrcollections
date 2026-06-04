@@ -146,7 +146,7 @@ local function showExecutionResultsDialog(results)
         })
     end
 
-    local contents = f:column { spacing = f:control_spacing(), table.unpack(children) }
+    local contents = f:column { spacing = f:control_spacing(), unpack(children) }
     LrDialogs.presentModalDialog {
         title      = "Execution Results",
         contents   = contents,

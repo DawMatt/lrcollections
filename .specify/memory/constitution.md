@@ -1,10 +1,11 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.1.0 → 1.2.0
+Version change: 1.2.0 → 1.3.0
 Modified principles: None
 Added sections:
   - Development Workflow & Quality Gates: item 6 — Spec-First Change Order (new)
+  - Principle II: Lua 5.1 stdlib constraint (table.unpack does not exist; use global unpack)
 Removed sections: None
 Templates requiring updates:
   - .specify/templates/plan-template.md ✅ Constitution Check table updated (row VI added)
@@ -56,9 +57,17 @@ through it:
 - Shared static configuration (plugin name, log target) MUST live in `Info.lua` via an `Info`
   object. Other modules MUST `require "Info"` and read values from it — no hardcoding of
   plugin-wide constants.
+- Lightroom Classic uses **Lua 5.1**. Functions introduced in Lua 5.2+ MUST NOT be used.
+  Notable 5.1 constraints:
+  - `unpack` is a **global function** — `table.unpack` does not exist.
+  - `#` length operator on tables with non-integer keys is undefined; use explicit counters.
+  - `goto` is not available.
 
 **Rationale**: Lightroom's `require` constraint makes file-level namespacing the only available
 modularity mechanism. The prefix convention makes grouping visible without directory hierarchy.
+The Lua 5.1 constraint is not caught at load time — calling a missing 5.2+ function produces a
+runtime "attempt to call field '...' (a nil value)" error that only surfaces on the code path
+that invokes it.
 
 ### III. Safe Catalog Operations
 
@@ -178,4 +187,4 @@ violations against Principles I–V and Workflow Gate VI before implementation i
 **Runtime development guidance**: See `LRPLUGINDEVELOPMENT.md` for Lightroom-specific Lua
 patterns, SDK class/namespace tables, and worked examples.
 
-**Version**: 1.2.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04
+**Version**: 1.3.0 | **Ratified**: 2026-06-03 | **Last Amended**: 2026-06-04

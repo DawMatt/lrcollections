@@ -19,7 +19,8 @@ proceeds: file renaming to double-underscore convention (Principle II) and intro
 
 ## Technical Context
 
-**Language/Version**: Lua (Lightroom Classic SDK variant — no standard Lua stdlib for I/O)
+**Language/Version**: Lua 5.1 (Lightroom Classic SDK variant). Lua 5.2+ functions MUST NOT
+be used — `table.unpack` does not exist; use the global `unpack`. No standard I/O stdlib.
 
 **Primary Dependencies**: Lightroom Classic SDK namespaces:
 `LrFunctionContext`, `LrView`, `LrBinding`, `LrDialogs`, `LrLogger`, `LrApplication`,

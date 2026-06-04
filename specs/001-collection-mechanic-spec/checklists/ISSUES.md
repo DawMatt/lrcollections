@@ -83,3 +83,14 @@ Yielding is not allowed within a C or metamethod call
   2. `createCollections` signature changed to `createCollections(targetSet, entries, targetName)`;
      the logger call uses the passed-in `targetName` string instead of calling `getName()`,
      so the function never calls `getName()` regardless of calling context.
+
+- [x] Execute button generated this error:
+```
+An internal error has occurred.
+[string "Ul_MainDialog.lua"]:149: attempt to call field 'unpack' (a nil value)
+```
+  **Fixed**: Lightroom Classic uses Lua 5.1 where `unpack` is a global function — `table.unpack`
+  was introduced in Lua 5.2 and does not exist in the LR SDK environment. Changed
+  `table.unpack(children)` to `unpack(children)` at `UI__MainDialog.lua:149` in
+  `showExecutionResultsDialog`. Also documented the Lua 5.1 constraint in constitution
+  Principle II and plan.md Technical Context to prevent recurrence.
