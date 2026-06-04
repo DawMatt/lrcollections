@@ -51,8 +51,10 @@ field so the user can begin filtering immediately without a mouse click.
 | Label | "Base Collection Set" |
 | Type | Popup/dropdown menu |
 | Binding | Items from `props.filteredCollectionSets`; selected value → `props.selectedCollectionSet` |
-| Placeholder item | "— Select a collection set —" (disabled, shown when nothing selected) |
-| Display format | `CollectionSetItem.displayName` (e.g., `"Events » 2024 » Summer"`) |
+| Placeholder item | `"-- Select a collection set --"` (disabled, shown when nothing selected) |
+| Display format | `CollectionSetItem.displayName` (e.g., `"Events > 2024 > Summer"`) — ASCII `" > "` is used as the hierarchy separator; Unicode `»` is not supported by LrView string rendering |
+| Default state | On dialog open, `selectedCollectionSet` MUST be initialised to `false` so the placeholder item is the active selection. No set is pre-selected. |
+| Binding type | `selectedCollectionSet` holds `{displayName, object}` when a real set is chosen, or `false` when the placeholder is active. Raw `LrCollectionSet` objects MUST NOT be stored directly — `getName()` cannot be called from button callbacks (C event loop context). |
 | Behaviour | Populated from `filteredCollectionSets`. Filter changes update items without clearing the current selection if the selected item remains. When `filteredCollectionSets` is empty (no sets match the filter), the popup shows only the placeholder item. |
 
 #### Collection Names Input
@@ -63,6 +65,7 @@ field so the user can begin filtering immediately without a mouse click.
 | Type | Multi-line text field (scrollable) |
 | Binding | `props.collectionNamesInput` (two-way) |
 | Placeholder | "Enter collection names, one per line" |
+| Hint label | "To add a new line: Option+Return (Mac) or Alt+Enter (Windows)" — displayed as a static label below the text area |
 | Behaviour | Free-form text. Each non-blank line is treated as one collection name. No character restrictions in input. |
 
 #### Button Row
@@ -79,6 +82,12 @@ Dry Run and Execute on the left; Close is the standard action button on the righ
 **Re-entrance guard**: Dry Run and Execute MUST NOT be re-entrant. A boolean flag MUST prevent
 a second invocation while an operation is in progress. The buttons are not visually disabled
 (LR SDK limitation) but clicks are silently ignored until the current operation completes.
+
+**Async task requirement**: Button action callbacks run on Lightroom's C event loop and MUST
+wrap their entire body in `LrTasks.startAsyncTask(function() ... end)` before making any SDK
+call that may yield (catalog reads, `getName()`, `LrDialogs`, `withWriteAccessDo`, etc.).
+Calling a yielding SDK method directly from a button callback produces a fatal
+"Yielding is not allowed within a C or metamethod call" error at runtime.
 
 ---
 

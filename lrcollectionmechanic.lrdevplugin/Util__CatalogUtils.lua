@@ -26,11 +26,11 @@ end
 
 -- entries: array of CollectionNameEntry {originalName, sanitizedName, status}
 -- Returns entries array with added fields: created (bool), errorMessage (string|nil)
-function CatalogUtils.createCollections(targetSet, entries)
+function CatalogUtils.createCollections(targetSet, entries, targetName)
     local catalog = LrApplication.activeCatalog()
     local results = {}
 
-    logger:info("createCollections: starting, target=" .. (targetSet and targetSet:getName() or "nil") .. ", count=" .. #entries)
+    logger:info("createCollections: starting, target=" .. (targetName or "?") .. ", count=" .. #entries)
 
     catalog:withWriteAccessDo("Create Collections", function()
         for _, entry in ipairs(entries) do

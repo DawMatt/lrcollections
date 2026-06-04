@@ -45,6 +45,10 @@ is available for LR SDK interactions; Lightroom's sandbox prevents external test
 - All operations within Lightroom's sandbox
 - Sub-directory `require` is not supported — all Lua files must be at plugin root
 - New files added after Lightroom launch require a full Lightroom restart to be detected
+- Button action callbacks in `presentModalDialog` run on LR's C event loop and cannot yield;
+  any SDK call that yields (catalog reads, `getName()`, `LrDialogs`, `withWriteAccessDo`)
+  MUST be made inside `LrTasks.startAsyncTask(function() ... end)`, not directly in the
+  callback
 
 **Scale/Scope**: Single user, single active catalog, no enforced batch size limit
 

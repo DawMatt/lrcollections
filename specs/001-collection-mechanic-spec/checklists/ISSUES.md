@@ -60,7 +60,7 @@ Yielding is not allowed within a C or metamethod call
 
 ## Run 2026/06/04 2151
 
-- [ ] Execute button generated this stack trace:
+- [x] Execute button generated this stack trace:
 ```
 Yielding is not allowed within a C or metamethod call
     0: global   assert                         - C
@@ -75,3 +75,11 @@ Yielding is not allowed within a C or metamethod call
     9:          [unnamed]                      - UI__MainDialog.lua:187
 <end>
 ```
+  **Fixed**: The previous fix removed `getName()` from UI__MainDialog.lua but
+  `CatalogUtils.createCollections` still called `targetSet:getName()` on line 33 for
+  logging — also in the C callback context. Two changes applied:
+  1. `onDryRun` and `onExecute` now wrap their entire body in `LrTasks.startAsyncTask`,
+     re-entering a Lua coroutine context where SDK methods that yield are permitted.
+  2. `createCollections` signature changed to `createCollections(targetSet, entries, targetName)`;
+     the logger call uses the passed-in `targetName` string instead of calling `getName()`,
+     so the function never calls `getName()` regardless of calling context.

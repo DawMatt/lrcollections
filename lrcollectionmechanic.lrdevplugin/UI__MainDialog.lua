@@ -1,5 +1,6 @@
 require "Info"
 local LrLogger = import 'LrLogger'
+local LrTasks  = import 'LrTasks'
 local logger = LrLogger(Info.PLUGINNAME)
 
 UIMainDialog = {}
@@ -160,34 +161,41 @@ function UIMainDialog.createMainDialog(props)
     local f = LrView.osFactory()
     local executing = false  -- re-entrance guard for Dry Run and Execute
 
+    -- Button callbacks run in Lightroom's C event loop and cannot yield.
+    -- LrTasks.startAsyncTask re-enters a Lua coroutine context where SDK calls that
+    -- yield (catalog reads, LrDialogs) are permitted.
     local function onDryRun()
         if executing then return end
         executing = true
-        local entries = validateDryRun(props)
-        if not entries then executing = false; return end
-        props.dryRunResults = entries
-        local ok, mod, err = 0, 0, 0
-        for _, e in ipairs(entries) do
-            if e.status == "OK" then ok = ok + 1
-            elseif e.status == "MODIFIED" then mod = mod + 1
-            else err = err + 1 end
-        end
-        logger:info("Dry Run: OK=" .. ok .. " MODIFIED=" .. mod .. " ERROR=" .. err)
-        showDryRunResultsDialog(entries)
-        executing = false
+        LrTasks.startAsyncTask(function()
+            local entries = validateDryRun(props)
+            if not entries then executing = false; return end
+            props.dryRunResults = entries
+            local ok, mod, err = 0, 0, 0
+            for _, e in ipairs(entries) do
+                if e.status == "OK" then ok = ok + 1
+                elseif e.status == "MODIFIED" then mod = mod + 1
+                else err = err + 1 end
+            end
+            logger:info("Dry Run: OK=" .. ok .. " MODIFIED=" .. mod .. " ERROR=" .. err)
+            showDryRunResultsDialog(entries)
+            executing = false
+        end)
     end
 
     local function onExecute()
         if executing then return end
         executing = true
-        local entries = validateExecute(props)
-        if not entries then executing = false; return end
-        local targetSet = props.selectedCollectionSet  -- {displayName, object}
-        logger:info("Execute: target=" .. (targetSet.displayName or "?") .. ", count=" .. #entries)
-        local results = CatalogUtils.createCollections(targetSet.object, entries)
-        props.executionResults = results
-        showExecutionResultsDialog(results)
-        executing = false
+        LrTasks.startAsyncTask(function()
+            local entries = validateExecute(props)
+            if not entries then executing = false; return end
+            local targetSet = props.selectedCollectionSet  -- {displayName, object}
+            logger:info("Execute: target=" .. (targetSet.displayName or "?") .. ", count=" .. #entries)
+            local results = CatalogUtils.createCollections(targetSet.object, entries, targetSet.displayName)
+            props.executionResults = results
+            showExecutionResultsDialog(results)
+            executing = false
+        end)
     end
 
     return f:column {
