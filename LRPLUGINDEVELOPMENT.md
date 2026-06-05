@@ -152,7 +152,7 @@ local LrLogger = import 'LrLogger'
 local logger = LrLogger(Info.PLUGINNAME)
 
 logger:enable(Info.LOGGERTARGET)
-logger:info("Plugin initialised: " .. Info.PLUGINNAME)
+logger:info("\n========================================\nPlugin initialised: " .. Info.PLUGINNAME)
 ```
 
 We then reference this within the Info.lua returned table. e.g.
