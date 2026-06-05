@@ -14,10 +14,11 @@ This file helps AI coding agents understand the `lrcollections` project quickly 
 ## Important files
 
 - `lrcollectionmechanic.lrdevplugin/Info.lua` — plugin registration, menu items, metadata.
+- `lrcollectionmechanic.lrdevplugin/PluginInit.lua` — initialization and startup logic.
 - `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — main plugin entrypoint and dialog lifecycle.
-- `lrcollectionmechanic.lrdevplugin/UI_MainDialog.lua` — UI layout and dialog rendering.
-- `lrcollectionmechanic.lrdevplugin/Util_CatalogUtils.lua` — Lightroom catalog operations.
-- `lrcollectionmechanic.lrdevplugin/Util_StringUtils.lua` — collection name sanitization and parsing.
+- `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — UI layout and dialog rendering.
+- `lrcollectionmechanic.lrdevplugin/Util__CatalogUtils.lua` — Lightroom catalog operations.
+- `lrcollectionmechanic.lrdevplugin/Util__StringUtils.lua` — collection name sanitization and parsing.
 - `lrcollectionmechanic.lrdevplugin/README.md` — user-facing documentation.
 - `lrcollectionmechanic.lrdevplugin/DEVELOPMENT.md` — technical implementation notes.
 - `LRPLUGINDEVELOPMENT.md` — project-specific Lightroom plugin conventions.
