@@ -8,10 +8,12 @@
 
 The Collection Mechanic Plugin enables Lightroom Classic users to batch-create collections
 under a chosen collection set from a single modal dialog. The dialog provides a case-insensitive
-filter field (above the collection set selector), a multi-line collection names input, and Dry
-Run / Execute actions. Invalid characters in names are replaced with underscores; partial-success
-batches (some names valid, some ERROR) are supported — valid names are created and errors
-reported per-name in the results summary.
+filter field (above the collection set selector), a two-column names area (Collection Names on
+the left, read-only Proposed Collection Names on the right), and an Execute action. Sanitized
+names are shown live in the Proposed Collection Names field as the user types — errors appear
+inline as `<ERROR: description>`. Invalid characters in names are replaced with underscores;
+partial-success batches (some names valid, some ERROR) are supported — valid names are created
+and errors reported per-name in the results summary.
 
 The existing plugin has functional code but requires two remediation items before feature work
 proceeds: file renaming to double-underscore convention (Principle II) and introduction of

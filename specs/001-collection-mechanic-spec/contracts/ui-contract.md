@@ -1,6 +1,6 @@
 # UI Contract: Collection Mechanic Plugin
 
-**Phase**: 1 | **Date**: 2026-06-03 | **Plan**: [plan.md](../plan.md)
+**Phase**: 1 | **Date**: 2026-06-05 | **Plan**: [plan.md](../plan.md)
 
 This document defines the UI layout, control behaviour, and interaction contracts for all
 dialogs in the Collection Mechanic plugin. It serves as the authoritative reference for
@@ -13,19 +13,23 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 **Title**: "Collection Mechanic"
 **Type**: Modal dialog (`LrDialogs.presentModalDialog`)
 **Action button**: "Close" (single standard action button — no OK/Cancel)
+**Width**: 50% wider than the pre-enhancement baseline dialog width.
 
 ### Layout (top to bottom)
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  [Label: "Collection Set Filter"]  [Text field]      │  ← Filter row
-│  [Label: "Base Collection Set"]    [Popup menu]      │  ← Selector row
-│  [Label: "Collection Names (one per line)"]          │
-│  [Multi-line text area: collectionNamesInput]        │  ← Names input
-│  [Hint: "Option+Return (Mac) or Alt+Enter (Win)"]    │
-│──────────────────────────────────────────────────────│
-│  [Dry Run]  [Execute]                    [Close]     │  ← Button row
-└──────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│  [Label: "Collection Set Filter"]  [Text field]                            │  ← Filter row
+│  [Label: "Base Collection Set"]    [Popup menu]                            │  ← Selector row
+│  ┌──────────────────────────────────┬───────────────────────────────────┐  │
+│  │ Collection Names (one per line)  │ Proposed Collection Names         │  │  ← Column headers
+│  ├──────────────────────────────────┼───────────────────────────────────┤  │
+│  │ [Multi-line edit field]          │ [Multi-line read-only field]      │  │  ← Names columns
+│  └──────────────────────────────────┴───────────────────────────────────┘  │
+│  [Hint: "Option+Return (Mac) or Alt+Enter (Win)"]                          │
+│────────────────────────────────────────────────────────────────────────────│
+│  [Execute]                                                      [Close]    │  ← Button row
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Initial focus**: On dialog open, keyboard focus MUST be placed on the Collection Set Filter
@@ -57,31 +61,59 @@ field so the user can begin filtering immediately without a mouse click.
 | Binding type | `selectedCollectionSet` holds `{displayName, object}` when a real set is chosen, or `false` when the placeholder is active. Raw `LrCollectionSet` objects MUST NOT be stored directly — `getName()` cannot be called from button callbacks (C event loop context). |
 | Behaviour | Populated from `filteredCollectionSets`. Filter changes update items without clearing the current selection if the selected item remains. When `filteredCollectionSets` is empty (no sets match the filter), the popup shows only the placeholder item. |
 
-#### Collection Names Input
+#### Collection Names / Proposed Collection Names Area
+
+The names area is a two-column row. Both columns are placed in a horizontal group that spans
+the full content width of the dialog. Each column is equal width (50% of the available content
+width, including its scroll bar).
+
+##### Collection Names Field (left column)
 
 | Property | Value |
 |----------|-------|
-| Label | "Collection Names (one per line)" |
-| Type | Multi-line text field (scrollable) |
+| Label | "Collection Names (one per line)" — appears above the field |
+| Type | Multi-line text field (`edit_field`, scrollable) |
 | Binding | `props.collectionNamesInput` (two-way) |
 | Placeholder | "Enter collection names, one per line" |
-| Hint label | "To add a new line: Option+Return (Mac) or Alt+Enter (Windows)" — displayed as a static label below the text area |
-| Behaviour | Free-form text. Each non-blank line is treated as one collection name. No character restrictions in input. |
+| Width | 50% of the names area (equal to the Proposed Collection Names field) |
+| Height | Fixed `height_in_lines` — same value as the Proposed Collection Names field |
+| Behaviour | Free-form text input. Each non-blank line is treated as one collection name. Every change fires the `collectionNamesInput` observer which updates `proposedNamesText`. |
+
+##### Proposed Collection Names Field (right column)
+
+| Property | Value |
+|----------|-------|
+| Label | "Proposed Collection Names" — appears above the field |
+| Type | Multi-line text field (`edit_field`, read-only) |
+| Binding | `props.proposedNamesText` (read from props; user cannot edit) |
+| Width | 50% of the names area (equal to the Collection Names field) |
+| Height | Fixed `height_in_lines` — same value as the Collection Names field |
+| Behaviour | Read-only. Updated automatically by the `collectionNamesInput` observer. Each line shows either the sanitized name or `<ERROR: description>`. Blank input lines produce blank output lines, preserving line correspondence. |
+
+**Sync scrolling note**: The Lightroom Classic SDK does not expose scroll position as a
+bindable property. True pixel-level scroll synchronisation is not achievable. Both fields use
+identical `height_in_lines` values; for inputs that exceed the visible lines, the user may
+scroll each field independently. Line correspondence is always preserved because both fields
+derive from the same line-split input.
+
+##### Hint Label
+
+A static label below the two-column names area:
+`"To add a new line: Option+Return (Mac) or Alt+Enter (Windows)"`
 
 #### Button Row
 
 | Button | Label | Action |
 |--------|-------|--------|
-| Dry Run | "Dry Run" | Validate input → sanitize names → show Dry Run Results dialog. Does NOT close main dialog. |
 | Execute | "Execute" | Validate inputs → sanitize → create collections → show Execution Results dialog. Does NOT close main dialog unless user then clicks Close. |
 | Close | "Close" | Dismiss main dialog. No catalog changes. (Standard LrDialogs action button.) |
 
-**Button row position**: All three buttons on the same row, aligned to the bottom of the dialog.
-Dry Run and Execute on the left; Close is the standard action button on the right.
+**Button row position**: Both buttons on the same row, aligned to the bottom of the dialog.
+Execute on the left; Close is the standard action button on the right.
 
-**Re-entrance guard**: Dry Run and Execute MUST NOT be re-entrant. A boolean flag MUST prevent
-a second invocation while an operation is in progress. The buttons are not visually disabled
-(LR SDK limitation) but clicks are silently ignored until the current operation completes.
+**Re-entrance guard**: Execute MUST NOT be re-entrant. A boolean flag MUST prevent a second
+invocation while an operation is in progress. The button is not visually disabled (LR SDK
+limitation) but clicks are silently ignored until the current operation completes.
 
 **Async task requirement**: Button action callbacks run on Lightroom's C event loop and MUST
 wrap their entire body in `LrFunctionContext.postAsyncTaskWithContext(name, function(context) ... end)`
@@ -95,41 +127,6 @@ from within a `pcall` body (a C function) is also forbidden; check return values
 
 ---
 
-## Dry Run Results Dialog
-
-**Title**: "Dry Run Results"
-**Type**: Modal dialog (`LrDialogs.presentModalDialog`)
-**Action button**: "Close"
-
-### Layout
-
-```
-┌──────────────────────────────────────────────────────┐
-│  Dry Run complete. No collections were created.       │
-│                                                      │
-│  ┌────────────────┬────────────────┬──────────┐      │
-│  │ Original Name  │ Sanitized Name │ Status   │      │
-│  ├────────────────┼────────────────┼──────────┤      │
-│  │ ...            │ ...            │ OK       │      │
-│  │ ...            │ ...            │ MODIFIED │      │
-│  │ ...            │ ...            │ ERROR    │      │
-│  └────────────────┴────────────────┴──────────┘      │
-│─────────────────────────────────────────────────────│
-│                                          [Close]     │
-└──────────────────────────────────────────────────────┘
-```
-
-### Behaviour
-
-- Results table is scrollable when the row count exceeds the visible area.
-- Each row shows: `originalName`, `sanitizedName`, `status`.
-- Status values: `OK`, `MODIFIED`, `ERROR`.
-- If all names have status `OK`: summary line reads "All names are ready to be created."
-- If any names have status `MODIFIED`: summary includes "Some names were modified."
-- If any names have status `ERROR`: summary includes "Some names are invalid and will be skipped."
-
----
-
 ## Execution Results Dialog
 
 **Title**: "Execution Results"
@@ -139,19 +136,19 @@ from within a `pcall` body (a C function) is also forbidden; check return values
 ### Layout
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  Successfully created X collection(s).               │
-│  [Y name(s) were skipped due to errors.]             │  ← only if Y > 0
-│                                                      │
-│  [Error details table — only shown if errors exist]  │
-│  ┌────────────────┬────────────────┬──────────────┐  │
-│  │ Name           │ Sanitized      │ Reason       │  │
-│  ├────────────────┼────────────────┼──────────────┤  │
-│  │ ...            │ ...            │ ...          │  │
-│  └────────────────┴────────────────┴──────────────┘  │
-│─────────────────────────────────────────────────────│
-│                                          [Close]     │
-└──────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│  Successfully created X collection(s).                 │
+│  [Y name(s) were skipped due to errors.]               │  ← only if Y > 0
+│                                                        │
+│  [Error details table — only shown if errors exist]    │
+│  ┌────────────────┬────────────────┬──────────────┐    │
+│  │ Name           │ Sanitized      │ Reason       │    │
+│  ├────────────────┼────────────────┼──────────────┤    │
+│  │ ...            │ ...            │ ...          │    │
+│  └────────────────┴────────────────┴──────────────┘    │
+│───────────────────────────────────────────────────────│
+│                                          [Close]       │
+└────────────────────────────────────────────────────────┘
 ```
 
 ### Behaviour
@@ -173,5 +170,5 @@ open after dismissal.
 | Trigger | Message |
 |---------|---------|
 | Execute clicked, no collection set selected | "Please select a collection set before proceeding." |
-| Dry Run or Execute clicked, no valid collection names | "Please enter at least one collection name." |
+| Execute clicked, no valid collection names | "Please enter at least one collection name." |
 | All names result in ERROR after sanitization | "All collection names are invalid after sanitization. Please review and re-enter." |

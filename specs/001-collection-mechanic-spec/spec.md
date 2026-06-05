@@ -48,32 +48,42 @@ click Execute, then verify those three collections appear in Lightroom under the
 
 ---
 
-### User Story 2 - Dry Run Preview (Priority: P2)
+### User Story 2 - Live Sanitization Preview (Priority: P2)
 
-Before committing to creating collections, a user wants to preview exactly what names will be
-used — particularly to see how any special characters will be transformed — without modifying
-the catalog.
+Before committing to creating collections, a user wants to see exactly what names will be
+used — particularly how any special characters will be transformed — without any additional
+button press or waiting. As the user types collection names, a second read-only field
+alongside the input immediately shows the sanitized equivalent of each name, or an error
+message if a name cannot be used.
 
 **Why this priority**: Prevents unintended names from being created and builds user confidence
-before the irreversible Execute step.
+before the irreversible Execute step. Live preview is faster and more intuitive than a
+separate button press, and eliminates the round-trip of clicking Dry Run then returning to
+edit names.
 
-**Independent Test**: Enter collection names containing special characters, click Dry Run,
-verify the preview table shows the original names alongside their sanitized equivalents and a
-status indicator, and confirm no collections have been created in the catalog.
+**Independent Test**: Enter collection names containing special characters in the Collection
+Names field and observe that the Proposed Collection Names field immediately updates to show
+sanitized equivalents (or `<ERROR: ...>` messages) without pressing any button. Verify both
+fields are equal height and that no collections have been created in the catalog.
 
 **Acceptance Scenarios**:
 
-1. **Given** one or more collection names are entered, **When** the user clicks Dry Run, **Then**
-   a results table is shown with three columns: original name, sanitized name, and status
-   (OK / MODIFIED / ERROR) — and no collections are created.
-2. **Given** a name that requires no changes, **When** Dry Run is run, **Then** its status is
-   OK and the original and sanitized names are identical.
-3. **Given** a name containing reserved characters, **When** Dry Run is run, **Then** its
-   status is MODIFIED and the sanitized name shows the replacements applied.
-4. **Given** a name that becomes empty after sanitization, **When** Dry Run is run, **Then**
-   its status is ERROR and a reason is shown.
-5. **Given** no collection names are entered, **When** the user clicks Dry Run, **Then** an
-   error message prompts the user to enter at least one name.
+1. **Given** the user is entering collection names, **When** any change is made to the
+   Collection Names field (including individual keystrokes), **Then** the Proposed Collection
+   Names field updates without any button press to show the sanitized result for every line.
+2. **Given** a name that requires no changes, **When** it appears in the Proposed Collection
+   Names field, **Then** the proposed name is identical to the entered name.
+3. **Given** a name containing reserved characters, **When** it appears in the Proposed
+   Collection Names field, **Then** the reserved characters are replaced and the proposed
+   name reflects the sanitized result.
+4. **Given** a name that becomes empty after sanitization, **When** it appears in the Proposed
+   Collection Names field, **Then** that line shows `<ERROR: description>` explaining why the
+   name is invalid.
+5. **Given** both fields contain more lines than are visible at once, **When** the user
+   scrolls either field, **Then** each field may be scrolled independently; corresponding
+   lines remain identifiable because both fields are the same height and line count.
+6. **Given** the Collection Names field is empty, **When** the dialog is open, **Then** the
+   Proposed Collection Names field is also empty.
 
 ---
 
@@ -92,7 +102,7 @@ independently functional), but the filter is essential for usability in large ca
 **Independent Test**: Open the plugin dialog (the same dialog used for US1 and US2), type a
 partial name into the filter field at the top of the collection set section, and verify the
 collection set selector below it narrows to matching entries. Clear the filter and verify all
-sets reappear. Select a set and confirm Dry Run and Execute both use that selection.
+sets reappear. Select a set and confirm Execute uses that selection.
 
 **Acceptance Scenarios**:
 
@@ -107,8 +117,8 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
    (e.g., filtering "2024" shows "Events » 2024 » Summer" with the parent path included).
 4. **Given** the filter field is cleared, **When** the selector updates, **Then** all collection
    sets reappear.
-5. **Given** the user selects a collection set after filtering, **When** Execute or Dry Run
-   is clicked, **Then** the operation uses the selected set as the destination.
+5. **Given** the user selects a collection set after filtering, **When** Execute is clicked,
+   **Then** the operation uses the selected set as the destination.
 
 ---
 
@@ -130,8 +140,12 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
   catalog as the destination for new collections.
 - **FR-002**: The plugin MUST accept multiple collection names as free-form text input, one name
   per line. Line endings `\r\n` and `\r` MUST be normalised to `\n` before parsing.
-- **FR-003**: The plugin MUST provide a Dry Run action that shows a preview of all name
-  transformations without creating any collections.
+- **FR-003**: The plugin MUST display a read-only Proposed Collection Names field adjacent to
+  the Collection Names input field. For each line in the Collection Names field, the Proposed
+  Collection Names field MUST show exactly one of: the sanitized collection name (which may be
+  identical to the input if no changes are needed), or `<ERROR: description>` if sanitization
+  fails or would produce an empty name. This field is system-generated output and its content
+  is not subject to the character sanitization rules that apply to user input.
 - **FR-004**: The plugin MUST provide an Execute action that creates collections in the selected
   set using sanitized names.
 - **FR-005**: The plugin MUST sanitize collection names by replacing reserved characters with
@@ -156,8 +170,23 @@ sets reappear. Select a set and confirm Dry Run and Execute both use that select
   sets with the same name at different levels.
 - **FR-014**: The plugin MUST be accessible from both the Library menu and the Plug-in Extras
   menu.
-- **FR-015**: The Dry Run results MUST show status per name: OK (no changes), MODIFIED
-  (characters replaced), or ERROR (name invalid after sanitization).
+- **FR-017**: The main plugin dialog MUST be 50% wider than the dialog width before this
+  enhancement.
+- **FR-018**: The Collection Names input area MUST be divided into two equal-width adjacent
+  columns: the left column labelled "Collection Names" and the right column labelled "Proposed
+  Collection Names". Together both columns and their respective scroll bars MUST span the full
+  width of the dialog content area.
+- **FR-019**: The Proposed Collection Names field MUST be the same height as the Collection
+  Names field.
+- **FR-020**: The Collection Names and Proposed Collection Names fields SHOULD maintain visible
+  alignment between corresponding lines. Both fields MUST use identical height configuration.
+  When input exceeds the visible area, individual scrolling of each field is acceptable; line
+  correspondence is preserved by the equal height of both fields.
+- **FR-021**: The Proposed Collection Names field MUST be read-only; the user MUST NOT be able
+  to type or paste directly into it.
+- **FR-022**: The Proposed Collection Names field MUST update in response to every change in
+  the Collection Names field — whether the change is a single keystroke, completing a line,
+  or focus leaving the Collection Names field.
 
 ### Character Sanitization Rules
 
@@ -183,8 +212,8 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
   name, before or after sanitization.
 - **Sanitized Name**: The collection name after reserved characters are replaced and the result
   is trimmed and collapsed.
-- **Result Record**: The per-name outcome of a Dry Run or Execute operation — original name,
-  sanitized name, status, and optional error detail.
+- **Result Record**: The per-name outcome of an Execute operation — original name, sanitized
+  name, status, and optional error detail.
 
 ## Success Criteria *(mandatory)*
 
@@ -192,15 +221,17 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
 
 - **SC-001**: A user can create 20 collections in a single operation in under 30 seconds from
   opening the plugin to seeing the confirmation summary.
-- **SC-002**: Dry Run accurately reflects the names that Execute will use — zero discrepancies
-  between previewed and created names across all test cases.
+- **SC-002**: The Proposed Collection Names field accurately reflects the names that Execute
+  will use — zero discrepancies between the live preview and the names of collections actually
+  created across all test cases.
 - **SC-003**: 100% of reserved characters in collection names are replaced during sanitization
   with no reserved characters present in any created collection name.
 - **SC-004**: The plugin handles a catalog containing 500+ collection sets with filter keystrokes
   updating the collection set selector within 200ms per keystroke.
 - **SC-005**: Error messages are self-explanatory — a first-time user can resolve every
   validation error without consulting documentation.
-- **SC-006**: No unintended changes are made to the catalog during a Dry Run operation.
+- **SC-006**: The Proposed Collection Names field is purely read-only and does not create,
+  modify, or delete any catalog entries; all catalog changes are confined to the Execute action.
 
 ## Assumptions
 
@@ -223,3 +254,6 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
 - Accessibility support (keyboard tab order, screen reader labels, keyboard shortcuts for
   buttons) is explicitly deferred from v1 scope. Lightroom Classic SDK limitations prevent
   full WCAG compliance.
+- Pixel-level scroll position synchronisation between the Collection Names and Proposed
+  Collection Names fields is not achievable within the plugin hosting environment; equal
+  field heights (FR-019, FR-020) ensure line-level correspondence is always maintained.

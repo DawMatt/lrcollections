@@ -17,9 +17,9 @@ components. It is the sole source of truth for dialog state.
 | `filterText` | string | Current value of the filter/search field | `""` |
 | `allCollectionSets` | array of `CollectionSetItem` | Full flat list loaded at dialog open | `{}` |
 | `filteredCollectionSets` | array of `CollectionSetItem` | Subset matching `filterText` (case-insensitive) | `{}` (set on load) |
-| `selectedCollectionSet` | `CollectionSetItem` or nil | The set chosen in the popup | `nil` |
+| `selectedCollectionSet` | `CollectionSetItem` or `false` | The set chosen in the popup — `false` when no set is selected. `false` (not `nil`) is required so the LrView popup binding activates the placeholder item on dialog open; `nil` does not trigger the placeholder | `false` |
 | `collectionNamesInput` | string | Raw multi-line text from the names input field | `""` |
-| `dryRunResults` | array of `ResultRecord` | Output of the last Dry Run | `{}` |
+| `proposedNamesText` | string | Computed multi-line text for the Proposed Collection Names field — one sanitized name (or `<ERROR: description>`) per line, kept in sync with `collectionNamesInput` | `""` |
 | `executionResults` | array of `ResultRecord` | Output of the last Execute | `{}` |
 
 ### Derived State Rules
@@ -31,6 +31,11 @@ components. It is the sole source of truth for dialog state.
 - The popup menu items are bound directly to `filteredCollectionSets`.
 - `selectedCollectionSet` is NOT reset when the filter changes (the selection persists if the
   selected item remains in the filtered list; it is hidden but not cleared if filtered out).
+- `proposedNamesText` is recomputed whenever `collectionNamesInput` changes:
+  - Split `collectionNamesInput` on `\n`.
+  - For each line: if blank → emit blank line; otherwise sanitize → emit sanitized name or
+    `<ERROR: description>`.
+  - Join all resulting lines back with `\n` and store as `proposedNamesText`.
 
 ---
 
@@ -54,8 +59,8 @@ equal. `displayName` is for display only — not used for identity checks.
 
 ## CollectionNameEntry (transient, per-operation)
 
-Represents one parsed line from `collectionNamesInput`. Created during Dry Run and Execute.
-Never stored in the property table.
+Represents one parsed line from `collectionNamesInput`. Created during the live preview update
+and during Execute. Never stored in the property table.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -73,7 +78,7 @@ Never stored in the property table.
 ## ResultRecord
 
 Extends `CollectionNameEntry` with the outcome of an Execute attempt.
-Stored in `props.dryRunResults` or `props.executionResults`.
+Stored in `props.executionResults`.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -107,7 +112,8 @@ Output: `{sanitizedName, status}`.
 [Open dialog]
   → Load allCollectionSets from catalog
   → Set filteredCollectionSets = allCollectionSets
-  → Initialize props with defaults
+  → Initialize props with defaults (proposedNamesText = "")
+  → Register observer: collectionNamesInput → recompute proposedNamesText
   → Display dialog
 
 [User types in filter field]
@@ -116,17 +122,13 @@ Output: `{sanitizedName, status}`.
 [User selects collection set]
   → selectedCollectionSet set in props
 
-[User enters collection names]
-  → collectionNamesInput updated in props
-
-[Dry Run clicked]
-  → Parse collectionNamesInput → array of CollectionNameEntry
-  → Validate: at least one non-ERROR entry → ERROR dialog if not
-  → Produce dryRunResults
-  → Display Dry Run results dialog
+[User enters/modifies collection names]
+  → collectionNamesInput changes → observer fires
+  → Split input by line → sanitize each line → join as proposedNamesText
+  → Proposed Collection Names field updates immediately (per-keystroke)
 
 [Execute clicked]
-  → Validate: selectedCollectionSet not nil → ERROR dialog if nil
+  → Validate: selectedCollectionSet not false/nil → ERROR dialog if false or nil
   → Parse collectionNamesInput → array of CollectionNameEntry
   → Validate: at least one non-ERROR entry → ERROR dialog if not
   → For each entry with status != ERROR: attempt createCollection via withWriteAccessDo

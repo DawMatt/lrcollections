@@ -129,41 +129,101 @@ from different branches, making hierarchy harder to read.
 ### D-006: Partial-Success Execute Pattern
 
 **Decision**: Sanitize all names first. Attempt creation for every name that produces a non-empty
-sanitized name. Collect a `ResultRecord` per name. After all attempts, display the aggregate
-results. Do not abort on individual failures.
+sanitized name inside a single `withWriteAccessDo` block. Collect a `ResultRecord` per name.
+After all attempts, display the aggregate results. Do not abort on individual failures.
 
 ```lua
-local results = {}
-for _, entry in ipairs(sanitizedEntries) do
-    if entry.status == "ERROR" then
-        table.insert(results, entry)  -- record without attempting creation
-    else
-        local ok, created = pcall(function()
-            return catalog:createCollection(entry.sanitizedName, targetSet, true)
-        end)
-        entry.created = ok and created ~= nil
-        entry.status = ok and "OK" or "ERROR"
-        if not ok then entry.errorMessage = tostring(created) end
-        table.insert(results, entry)
+catalog:withWriteAccessDo("Create Collections", function(context)
+    for _, entry in ipairs(sanitizedEntries) do
+        if entry.status == "ERROR" then
+            table.insert(results, entry)  -- record without attempting creation
+        else
+            local created = catalog:createCollection(entry.sanitizedName, targetSet, true)
+            entry.created = created ~= nil
+            if not entry.created then
+                entry.status = "ERROR"
+                entry.errorMessage = "Collection could not be created."
+            end
+            table.insert(results, entry)
+        end
     end
-end
+end)
 ```
 
-**Rationale**: Spec clarification Q1 — partial success is the required behaviour. `pcall`
-wraps each creation call per Principle III. `canReturnPrior=true` (third arg to
-`createCollection`) prevents errors for duplicate names (treated as success per FR-012).
+**Rationale**: Spec clarification Q1 — partial success is the required behaviour. Constitution
+Principle III mandates `withWriteAccessDo` for catalog writes and prohibits `pcall` around LR
+SDK calls that may yield (Lua 5.1 cannot yield across a `pcall` C boundary). `canReturnPrior=true`
+(third arg to `createCollection`) prevents errors for duplicate names (treated as success per
+FR-012). Return-value checking (`created ~= nil`) is used instead of `pcall`.
+
+**Alternatives considered**: `pcall` wrapping per creation call — rejected because `pcall`
+cannot wrap yielding SDK calls in Lua 5.1 (Constitution Principle III). Separate
+`withWriteAccessDo` per name — rejected as unnecessary overhead; a single transaction is
+simpler and sufficient.
 
 ---
 
 ### D-007: Button Layout
 
-**Decision**: Single row of action buttons: `[Dry Run]  [Execute]  [Close]`. No separate
-OK / Cancel buttons. The standard Lightroom dialog action button row is used for Close;
-Dry Run and Execute are placed alongside it.
+**Decision**: Single row of action buttons: `[Execute]  [Close]`. No Dry Run button; no
+separate OK / Cancel buttons. The standard Lightroom dialog action button row is used for
+Close; Execute is placed alongside it.
 
-**Rationale**: Original spec TODO: "Keep only 1 of those 3 buttons [Close/OK/Cancel], then
-place the Dry Run and Execute buttons on the same line as the standard button(s)." Reduces
-visual clutter and aligns with the spec's stated improvement.
+**Rationale**: The Dry Run button has been replaced by the live Proposed Collection Names
+field (FR-003, FR-022). The user sees sanitization results in real time without needing a
+separate preview action. Removing the button reduces visual clutter and eliminates the extra
+modal dialog round-trip.
 
-**Alternatives considered**: Separate rows for action vs navigation buttons — rejected per
-the spec TODO.
+**Alternatives considered**: Keeping the Dry Run button alongside the live preview — rejected
+because it is redundant; the live field already shows the same information.
+
+---
+
+### D-008: Live Sanitization Update Strategy
+
+**Decision**: Watch `collectionNamesInput` via `props:addObserver` and update
+`proposedNamesText` by splitting the input on newlines, sanitizing each line, and joining
+results back into a single string. The Proposed Collection Names field binds read-only to
+`proposedNamesText`.
+
+```lua
+props:addObserver("collectionNamesInput", function(_, _, newValue)
+    local lines = splitLines(newValue)
+    local proposed = {}
+    for _, line in ipairs(lines) do
+        if line == "" then
+            table.insert(proposed, "")
+        else
+            local sanitized, err = sanitizeName(line)
+            if err then
+                table.insert(proposed, "<ERROR: " .. err .. ">")
+            else
+                table.insert(proposed, sanitized)
+            end
+        end
+    end
+    props.proposedNamesText = table.concat(proposed, "\n")
+end)
+```
+
+**Sync scrolling constraint**: The Lightroom Classic SDK does not expose scroll position as a
+bindable property on `edit_field` controls. True pixel-level scroll synchronisation between
+two separate `edit_field` instances is not achievable with standard LrView. The practical
+mitigation is to make both fields tall enough to display all content without scrolling for
+typical input sizes (up to ~20 lines by default), relying on `height_in_lines` to match both
+fields identically. For larger inputs the user may scroll each field independently; this is a
+known SDK limitation. The fields will always remain line-count-aligned because both bind to
+text derived from the same input.
+
+**Read-only field**: The Proposed Collection Names field uses `edit_field` with no binding to
+a writable property (or a view-only binding) so the user cannot type into it. The `value` is
+set programmatically via `proposedNamesText`.
+
+**Rationale**: `props:addObserver` fires synchronously whenever the bound property changes,
+providing per-keystroke updates (FR-022). Splitting and rejoining the text preserves the
+line-by-line correspondence required by FR-003.
+
+**Alternatives considered**: Polling via `LrTasks` — rejected as unnecessarily complex and
+not per-keystroke. Separate observer per line — not viable since the input is a single string.
+Autogrow field — Lightroom's `edit_field` does not support autogrow; fixed `height_in_lines`
+is the available option.

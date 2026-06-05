@@ -11,7 +11,7 @@ description: "Task list for Collection Mechanic Plugin implementation"
 **Tests**: Not requested — no test tasks generated.
 
 **Organization**: Tasks are grouped by phase. Phase 1 (remediation) and Phase 2 (foundational)
-must complete before any user story phase begins. User stories can then proceed in priority order.
+must complete before any user story phase begins. User stories then proceed in priority order.
 
 ## Format: `[ID] [P?] [Story?] Description`
 
@@ -49,14 +49,14 @@ work can begin until this phase is complete.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [X] T008 Implement `StringUtils.sanitizeCollectionName(name)` in `lrcollectionmechanic.lrdevplugin/Util__StringUtils.lua` — trim whitespace, replace `"*/:|\?<>` and `\` with `_`, collapse consecutive underscores, return `{sanitizedName, status}` where status is `"OK"`, `"MODIFIED"`, or `"ERROR"` per data-model.md sanitization rules
+- [X] T008 Implement `StringUtils.sanitizeCollectionName(name)` in `lrcollectionmechanic.lrdevplugin/Util__StringUtils.lua` — trim whitespace, replace `"*/:|\?<>` and `\` with `_`, collapse consecutive underscores; return `{sanitizedName, status}` where status is `"OK"`, `"MODIFIED"`, or `"ERROR"` per data-model.md sanitization rules; also return an `errorMessage` string when status is `"ERROR"`
 - [X] T009 [P] Implement `StringUtils.parseCollectionNames(input)` in `lrcollectionmechanic.lrdevplugin/Util__StringUtils.lua` — split on newlines (normalise `\r\n` and `\r` to `\n` first), trim each line, skip blank lines, apply `sanitizeCollectionName` to each, return array of `CollectionNameEntry` per data-model.md
 - [X] T010 Implement `CatalogUtils.getCollectionSets()` in `lrcollectionmechanic.lrdevplugin/Util__CatalogUtils.lua` — depth-first recursive traversal of `catalog:getChildCollectionSets()` and each set's `getChildCollectionSets()`; build flat array of `{displayName, object}` where `displayName` is the full ancestry path joined with ` » `; obtain catalog via `LrApplication.activeCatalog()` inside the function per Principle I
-- [X] T011 Define `PropertyTable` in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` using `LrBinding.makePropertyTable(context)` with fields: `filterText=""`, `allCollectionSets={}`, `filteredCollectionSets={}`, `selectedCollectionSet=nil`, `collectionNamesInput=""`, `dryRunResults={}`, `executionResults={}` per data-model.md
+- [ ] T011 Define `PropertyTable` in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` using `LrBinding.makePropertyTable(context)` with fields: `filterText=""`, `allCollectionSets={}`, `filteredCollectionSets={}`, `selectedCollectionSet=false`, `collectionNamesInput=""`, `proposedNamesText=""`, `executionResults={}` — note: `dryRunResults` is NOT present; `selectedCollectionSet` initialises to `false` (not nil) so the placeholder popup item is active on open per ui-contract.md
 - [X] T012 Add module-level logger import to each of `CollectionMechanic.lua`, `UI__MainDialog.lua`, `Util__StringUtils.lua`, `Util__CatalogUtils.lua` in `lrcollectionmechanic.lrdevplugin/` — `local logger = import 'LrLogger'(Info.PLUGINNAME)` with no `:enable()` call (PluginInit handles that) per Principle V
 
 **Checkpoint**: Foundation ready — `sanitizeCollectionName`, `parseCollectionNames`, and
-`getCollectionSets` all callable; PropertyTable initialises without error.
+`getCollectionSets` all callable; PropertyTable initialises without error; no `dryRunResults` field present.
 
 ---
 
@@ -72,11 +72,11 @@ appear in Lightroom under the selected set.
 ### Implementation for User Story 1
 
 - [X] T013 [US1] Populate `props.allCollectionSets` and `props.filteredCollectionSets` on dialog open in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — call `CatalogUtils.getCollectionSets()` inside `LrFunctionContext` and assign results to both fields before showing dialog; log the count of sets found
-- [X] T014 [US1] Build main dialog skeleton in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — collection set popup row (bound to `props.filteredCollectionSets` / `props.selectedCollectionSet`), collection names multi-line text field (bound to `props.collectionNamesInput`), and button row with Dry Run, Execute, and Close buttons using `LrView` and `LrBinding`; return view to `CollectionMechanic.showCollectionMechanicDialog` for presentation via `LrDialogs.presentModalDialog`
-- [X] T015 [US1] Implement `CatalogUtils.createCollections(targetSet, entries)` in `lrcollectionmechanic.lrdevplugin/Util__CatalogUtils.lua` — wrap all creation in `catalog:withWriteAccessDo`, iterate entries with status `~= "ERROR"`, before calling `createCollection` check for an existing collection with a matching name using `string.lower` comparison (FR-012 case-insensitive duplicate detection) and if found mark as success without creating, otherwise call `catalog:createCollection(entry.sanitizedName, targetSet, true)` inside `pcall`, populate `entry.created` and `entry.errorMessage`, return full results array (partial-success pattern from research.md D-006)
-- [X] T016 [US1] Implement Execute validation in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — check `props.selectedCollectionSet ~= nil` (show "Please select a collection set before proceeding." via `LrDialogs.message` if nil); check parsed names contain at least one non-ERROR entry (show "Please enter at least one collection name." if not); abort Execute if either check fails
-- [X] T017 [US1] Implement Execute button handler in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — call `StringUtils.parseCollectionNames(props.collectionNamesInput)`, run validation (T016), call `CatalogUtils.createCollections`, store results in `props.executionResults`, trigger Execution Results dialog
-- [X] T018 [US1] Build Execution Results dialog in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — summary line "Successfully created X collection(s)", error details table (columns: Name | Sanitized | Reason) shown only when at least one ERROR exists, single Close button per ui-contract.md Execution Results Dialog section
+- [ ] T014 [US1] Build main dialog skeleton in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — collection set popup row (bound to `props.filteredCollectionSets` / `props.selectedCollectionSet`), collection names multi-line text field (bound to `props.collectionNamesInput`), placeholder for Proposed Collection Names column (to be expanded in US2), and button row with Execute and Close buttons only (no Dry Run button); return view to `CollectionMechanic.showCollectionMechanicDialog` for presentation via `LrDialogs.presentModalDialog` with `cancelVerb = "< exclude >"`
+- [ ] T015 [US1] Implement `CatalogUtils.createCollections(targetSet, entries)` in `lrcollectionmechanic.lrdevplugin/Util__CatalogUtils.lua` — wrap all creation in a single `catalog:withWriteAccessDo("Create Collections", func)` call; within the callback iterate entries with status `~= "ERROR"`, check for existing collection using `string.lower` comparison (FR-012 case-insensitive duplicate detection) and if found mark as success without creating, otherwise call `catalog:createCollection(entry.sanitizedName, targetSet, true)` and check return value (`~= nil`) for success — do NOT use `pcall` around any LR SDK call (Principle III); populate `entry.created` and `entry.errorMessage`; return full results array (partial-success pattern from research.md D-006)
+- [X] T016 [US1] Implement Execute validation in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — check `props.selectedCollectionSet ~= false` (show "Please select a collection set before proceeding." via `LrDialogs.message` if false/nil); check parsed names contain at least one non-ERROR entry (show "Please enter at least one collection name." if not); abort Execute if either check fails
+- [X] T017 [US1] Implement Execute button handler in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — wrap body in `LrFunctionContext.postAsyncTaskWithContext`; call `StringUtils.parseCollectionNames(props.collectionNamesInput)`, run validation (T016), call `CatalogUtils.createCollections`, store results in `props.executionResults`, trigger Execution Results dialog
+- [X] T018 [US1] Build Execution Results dialog in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — summary line "Successfully created X collection(s)", error details table (columns: Name | Sanitized | Reason) shown only when at least one ERROR exists, single Close button per ui-contract.md Execution Results Dialog section; use `cancelVerb = "< exclude >"`
 - [X] T019 [US1] Log Execute operations in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` and `Util__CatalogUtils.lua` — `logger:info` for operation start (collection set name, name count), `logger:warn` per skipped ERROR entry, `logger:info` for completion summary (created count, error count)
 
 **Checkpoint**: User Story 1 fully functional — batch creation works, partial failures reported,
@@ -84,24 +84,30 @@ results dialog shows correct summary. Test independently before moving to US2.
 
 ---
 
-## Phase 4: User Story 2 — Dry Run Preview (Priority: P2)
+## Phase 4: User Story 2 — Live Sanitization Preview (Priority: P2)
 
-**Goal**: User can preview name transformations (including character sanitization) without
-modifying the catalog. Status shown per name (OK / MODIFIED / ERROR).
+**Goal**: As the user types collection names, the read-only Proposed Collection Names field
+alongside the input shows the sanitized equivalent of each name (or `<ERROR: description>`) in
+real time — no button press required. The main dialog is 50% wider and the names area is
+split into two equal-width columns.
 
-**Independent Test**: Enter names including special characters, click Dry Run — verify the
-results table shows correct original/sanitized/status for each name; open Lightroom Collections
-panel and confirm no new collections were created.
+**Independent Test**: Enter names including special characters in the Collection Names field —
+observe the Proposed Collection Names field updating live on each keystroke without pressing
+any button. Enter a name that consists entirely of reserved characters and confirm the
+corresponding line shows `<ERROR: ...>`. Verify both fields are equal width and height and
+that no collections are created by typing alone.
 
 ### Implementation for User Story 2
 
-- [X] T020 [US2] Implement Dry Run validation in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — check parsed names contain at least one non-empty line after trimming; show "Please enter at least one collection name." via `LrDialogs.message` on failure; no collection set check required for Dry Run
-- [X] T021 [US2] Implement Dry Run button handler in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — call `StringUtils.parseCollectionNames(props.collectionNamesInput)`, run validation (T020), store result array in `props.dryRunResults` (no catalog writes), trigger Dry Run Results dialog
-- [X] T022 [US2] Build Dry Run Results dialog in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — header "Dry Run complete. No collections were created.", scrollable three-column table (Original Name | Sanitized Name | Status), summary note based on status mix, Close button per ui-contract.md Dry Run Results Dialog section
-- [X] T023 [US2] Log Dry Run operations in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — `logger:info` for operation (name count, OK count, MODIFIED count, ERROR count)
+- [ ] T020 [US2] Widen the main dialog in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — locate the current `width` or `min_width` value passed to `LrDialogs.presentModalDialog` (or the top-level view); multiply it by 1.5 (50% wider) and update; if no explicit width is set, add one at 1.5× the default narrow width (FR-017)
+- [ ] T021 [US2] Replace the single Collection Names input with a two-column `horizontal_group` in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — left column: existing Collection Names `edit_field` (editable, multi-line, `fill_horizontal`, bound two-way to `props.collectionNamesInput`, labelled "Collection Names (one per line)"); right column: new Proposed Collection Names `edit_field` (read-only, multi-line, `fill_horizontal`, value from `props.proposedNamesText`, labelled "Proposed Collection Names"); both columns use identical `height_in_lines`; the `horizontal_group` itself spans the full content width of the dialog (FR-018, FR-019, FR-021)
+- [ ] T022 [US2] Implement live sanitization observer in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — after PropertyTable is created, call `props:addObserver("collectionNamesInput", function(_, _, newValue) ... end)`; inside the observer split `newValue` on `\n`, for each line: if blank emit blank, otherwise call `StringUtils.sanitizeCollectionName(line)` — if ERROR emit `"<ERROR: " .. errorMessage .. ">"`, otherwise emit the sanitized name; join all results with `\n` and assign to `props.proposedNamesText`; no LR SDK calls that may yield are made inside this observer (D-008, FR-003, FR-022)
+- [ ] T023 [US2] Remove all Dry Run code from `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — delete: the Dry Run button definition from the button row, the Dry Run button action callback, the Dry Run validation function, and the Dry Run Results dialog builder; ensure no references to `props.dryRunResults` remain in the file
+- [ ] T024 [US2] Log live sanitization updates in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — on observer fire, log at `logger:debug` level the line count and error count in the proposed output (avoids per-keystroke noise at info level); no catalog interactions are logged here
 
-**Checkpoint**: User Stories 1 AND 2 both work independently. Dry Run never modifies catalog;
-Execute creates with correct sanitized names.
+**Checkpoint**: User Stories 1 AND 2 both work independently. Dialog is visibly wider. Proposed
+Collection Names field updates live on each keystroke. No Dry Run button present. Execute still
+creates collections correctly using the same sanitization logic as the live preview.
 
 ---
 
@@ -117,9 +123,9 @@ even if hidden. Click Execute — operation uses the still-selected set.
 
 ### Implementation for User Story 3
 
-- [X] T024 [US3] Add filter field row above the collection set popup in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — single-line text field with label "Collection Set Filter", bound two-way to `props.filterText`, placeholder "Type to filter collection sets...", positioned immediately above the collection set selector per ui-contract.md Filter Field spec; collection set popup label is "Base Collection Set"
-- [X] T025 [US3] Implement filter observer in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` or `UI__MainDialog.lua` — observe `props.filterText` changes; recompute `props.filteredCollectionSets` from `props.allCollectionSets` using `string.find(string.lower(displayName), string.lower(filterText), 1, true) ~= nil`; assign full list when `filterText` is empty (case-insensitive plain-text match per research.md D-003)
-- [X] T026 [US3] Verify selection-persistence in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — confirm `props.selectedCollectionSet` is NOT reset when `props.filteredCollectionSets` changes; Execute and Dry Run must use the stored selection regardless of current filter state
+- [X] T025 [US3] Add filter field row above the collection set popup in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — single-line text field with label "Collection Set Filter", bound two-way to `props.filterText`, placeholder "Type to filter collection sets...", positioned immediately above the collection set selector per ui-contract.md Filter Field spec; collection set popup label is "Base Collection Set"
+- [X] T026 [US3] Implement filter observer in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` or `UI__MainDialog.lua` — observe `props.filterText` changes; recompute `props.filteredCollectionSets` from `props.allCollectionSets` using `string.find(string.lower(displayName), string.lower(filterText), 1, true) ~= nil`; assign full list when `filterText` is empty (case-insensitive plain-text match per research.md D-003)
+- [X] T027 [US3] Verify selection-persistence in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — confirm `props.selectedCollectionSet` is NOT reset when `props.filteredCollectionSets` changes; Execute must use the stored selection regardless of current filter state
 
 **Checkpoint**: All three user stories independently functional. Filter narrows correctly,
 clears correctly, and does not disturb existing selection.
@@ -130,10 +136,10 @@ clears correctly, and does not disturb existing selection.
 
 **Purpose**: Final quality pass across all user stories.
 
-- [X] T027 Verify button row layout in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — Dry Run and Execute buttons on the left side of the action row, Close as the single standard action button on the right; no separate OK or Cancel buttons present per research.md D-007 and ui-contract.md Button Row spec
-- [X] T028 [P] Audit all `logger:*` calls across `lrcollectionmechanic.lrdevplugin/` — confirm `logger:info` for normal operations, `logger:warn` for recoverable issues (e.g., skipped ERROR names), `logger:error` for unexpected failures; no important operation left unlogged per constitution Principle V
-- [X] T029 [P] Search all `.lua` files in `lrcollectionmechanic.lrdevplugin/` for any remaining `require` or `import` references to single-underscore filenames (`UI_`, `Util_`) and update to double-underscore equivalents per constitution Principle II
-- [ ] T030 **[MANUAL]** Follow `specs/001-collection-mechanic-spec/quickstart.md` happy path in Lightroom Classic — install plugin, create 3 collections, verify character sanitization workflow, check log output; confirm all three user stories pass their independent tests end-to-end
+- [ ] T028 Verify button row layout in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — Execute button on the left side of the action row, Close as the single standard action button on the right; no Dry Run, OK, or Cancel buttons present per research.md D-007 and ui-contract.md Button Row spec
+- [X] T029 [P] Audit all `logger:*` calls across `lrcollectionmechanic.lrdevplugin/` — confirm `logger:info` for normal operations, `logger:warn` for recoverable issues (e.g., skipped ERROR names), `logger:error` for unexpected failures; no important operation left unlogged per constitution Principle V
+- [X] T030 [P] Search all `.lua` files in `lrcollectionmechanic.lrdevplugin/` for any remaining `require` or `import` references to single-underscore filenames (`UI_`, `Util_`) and update to double-underscore equivalents per constitution Principle II
+- [ ] T031 **[MANUAL]** Follow `specs/001-collection-mechanic-spec/quickstart.md` happy path in Lightroom Classic — install plugin, verify live sanitization updates as names are typed, create 3 collections, verify character sanitization workflow, check log output; confirm all three user stories pass their independent tests end-to-end
 
 ---
 
@@ -144,8 +150,8 @@ clears correctly, and does not disturb existing selection.
 - **Phase 1 (Setup/Remediation)**: No dependencies — start immediately. T007 (restart) MUST complete before Phase 2.
 - **Phase 2 (Foundational)**: Depends on Phase 1 + T007 restart — BLOCKS all user stories.
 - **Phase 3 (US1)**: Depends on Phase 2. T013 → T014 → T015 → T016/T017 → T018 → T019.
-- **Phase 4 (US2)**: Depends on Phase 2. Can run concurrently with Phase 3 if desired; T020/T021 reuse `parseCollectionNames` from T009.
-- **Phase 5 (US3)**: Depends on Phase 2. T024 requires T014 (main dialog skeleton) to exist.
+- **Phase 4 (US2)**: Depends on Phase 3 (T014 dialog skeleton, T008 sanitization). T020 → T021 → T022 (in parallel with T023) → T024.
+- **Phase 5 (US3)**: Depends on Phase 2. T025 requires T014 (main dialog skeleton) to exist.
 - **Polish (Phase N)**: Depends on all desired user story phases being complete.
 
 ### Within Phase 3 (US1)
@@ -155,7 +161,7 @@ T013 (populate sets on open)
   ↓
 T014 (dialog skeleton) ← required by T015, T016, T017, T018
   ↓
-T015 [P] (createCollections) ← T016 [P] (Execute validation)
+T015 [P] (createCollections)   T016 [P] (Execute validation)
   ↓                                   ↓
 T017 (Execute handler — depends on T015 + T016)
   ↓
@@ -164,12 +170,24 @@ T018 (Execution Results dialog)
 T019 (logging — can be woven in throughout)
 ```
 
+### Within Phase 4 (US2)
+
+```
+T020 (widen dialog)
+  ↓
+T021 (two-column names layout) [P] T023 (remove Dry Run code)
+  ↓
+T022 (live sanitization observer — requires T011 proposedNamesText field)
+  ↓
+T024 (debug logging for observer)
+```
+
 ### Parallel Opportunities
 
 ```
 # Phase 1 — run together after T001:
 T002, T003 (file renames — different files)
-T005 (Info.lua — independent)
+T005, T005a (Info.lua checks — same file, can read/verify together)
 
 # Phase 2 — run together:
 T008, T009 (StringUtils functions — same file, sequence within file)
@@ -178,6 +196,9 @@ T012 (logger imports — multiple files, independent)
 
 # Phase 3 — after T014:
 T015 (createCollections) and T016 (validation) can be written in parallel
+
+# Phase 4 — after T020+T021:
+T022 (observer) and T023 (remove dry run) can be written in parallel
 ```
 
 ---
@@ -196,7 +217,7 @@ T015 (createCollections) and T016 (validation) can be written in parallel
 
 1. Phase 1 + Phase 2 → Foundation ready
 2. Phase 3 → Execute works → Test US1 independently
-3. Phase 4 → Dry Run works → Test US2 independently
+3. Phase 4 → Live preview works, dialog wider → Test US2 independently
 4. Phase 5 → Filter works → Test US3 independently
 5. Phase N → Polish and full end-to-end validation
 
@@ -209,5 +230,8 @@ T015 (createCollections) and T016 (validation) can be written in parallel
 - **[MANUAL]** tasks require developer action in Lightroom; cannot be automated
 - File renames (T001–T003) are git operations: `git mv` preserves history
 - After T007 (restart), verify plugin loads before proceeding — check log for startup message
-- `canReturnPrior=true` is passed to `createCollection` as a safety net, but T015 implements an explicit `string.lower` pre-check for case-insensitive duplicate detection per FR-012 before calling the SDK
-- The filter observer (T025) should use LrBinding's observer pattern, not a polling approach
+- `createCollection` is called inside `withWriteAccessDo`, NOT wrapped in `pcall` — Principle III forbids pcall around yielding SDK calls in Lua 5.1 (research.md D-006)
+- The live sanitization observer (T022) must NOT make any yielding SDK calls — it runs synchronously on the property change event
+- `selectedCollectionSet` initialises to `false` (not `nil`) so the popup placeholder item is the active selection on dialog open (ui-contract.md)
+- The filter observer (T026) uses `props:addObserver`, not polling
+- `cancelVerb = "< exclude >"` suppresses the Cancel button on modal dialogs (constitution UI Dialog Standards)

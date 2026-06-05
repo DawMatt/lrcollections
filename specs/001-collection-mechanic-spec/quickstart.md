@@ -48,13 +48,12 @@ The Collection Mechanic dialog opens.
    Product Shots
    Portraits 2024
    ```
-4. Click **Dry Run**.
-   - Results dialog should show all three names with status `OK` and no modifications.
-5. Close the Dry Run results.
-6. Click **Execute**.
+   - The **Proposed Collection Names** field on the right updates live as you type, showing
+     the sanitized name for each line. All three names should appear unchanged.
+4. Click **Execute**.
    - Results dialog should show: "Successfully created 3 collection(s)."
-7. Click **Close** on both the results dialog and the main dialog.
-8. In Lightroom's Collections panel, expand the selected collection set — the three new
+5. Click **Close** on both the results dialog and the main dialog.
+6. In Lightroom's Collections panel, expand the selected collection set — the three new
    collections should appear.
 
 ---
@@ -67,11 +66,12 @@ The Collection Mechanic dialog opens.
    "Best Shots"
    Normal Name
    ```
-2. Click **Dry Run**.
-   - `Summer/Beach 2024` → `Summer_Beach_2024` (MODIFIED)
-   - `"Best Shots"` → `_Best_Shots_` (MODIFIED)
-   - `Normal Name` → `Normal Name` (OK)
-3. Click **Execute** — all three collections are created with the sanitized names.
+2. Observe the **Proposed Collection Names** field updating live as you type:
+   - `Summer/Beach 2024` → `Summer_Beach 2024` then eventually `Summer_Beach_2024`
+   - `"Best Shots"` → `_Best Shots_` then eventually `_Best_Shots_`
+   - `Normal Name` → `Normal Name` (unchanged)
+3. Click **Execute** — all three collections are created with the sanitized names shown
+   in the Proposed Collection Names field.
 
 ---
 
