@@ -9,15 +9,23 @@ local RESERVED_CHARS = {
     [':'] = true, ['|'] = true, ['?'] = true, ['<'] = true, ['>'] = true,
 }
 
--- Returns {sanitizedName, status} where status is "OK", "MODIFIED", or "ERROR"
+local MAX_NAME_LENGTH = 255
+
+-- Returns {sanitizedName, status, errorMessage} where status is "OK", "MODIFIED", or "ERROR".
+-- errorMessage is populated only when status == "ERROR".
 function StringUtils.sanitizeCollectionName(name)
     if not name or type(name) ~= "string" then
-        return { sanitizedName = "", status = "ERROR" }
+        return { sanitizedName = "", status = "ERROR", errorMessage = "Invalid input" }
     end
 
     local trimmed = name:match("^%s*(.-)%s*$")
     if not trimmed or trimmed == "" then
-        return { sanitizedName = "", status = "ERROR" }
+        return { sanitizedName = "", status = "ERROR", errorMessage = "Name is empty" }
+    end
+
+    if #trimmed > MAX_NAME_LENGTH then
+        return { sanitizedName = "", status = "ERROR",
+                 errorMessage = "Name exceeds " .. MAX_NAME_LENGTH .. " characters" }
     end
 
     local replaced = ""
@@ -33,7 +41,8 @@ function StringUtils.sanitizeCollectionName(name)
     local collapsed = replaced:gsub("_+", "_")
 
     if collapsed == "" then
-        return { sanitizedName = "", status = "ERROR" }
+        return { sanitizedName = "", status = "ERROR",
+                 errorMessage = "Name is empty after sanitization" }
     elseif collapsed == trimmed then
         return { sanitizedName = collapsed, status = "OK" }
     else
