@@ -24,27 +24,31 @@ A Lightroom Classic user wants to create many collections at once under a chosen
 set, rather than creating them one by one through the standard Lightroom UI.
 
 The user opens the plugin from the Library menu, selects the collection set that will contain
-the new collections, types the desired collection names (one per line), and clicks Execute. The
-plugin creates all listed collections in the chosen set and confirms how many were created.
+the new collections, types the desired collection names (one per line), and clicks Create
+Collections. The plugin creates all listed collections in the chosen set, closes the dialog,
+and confirms how many were created.
 
 **Why this priority**: Core value of the plugin — without batch creation there is no feature.
 
 **Independent Test**: Open the plugin, select any collection set, enter three collection names,
-click Execute, then verify those three collections appear in Lightroom under the selected set.
+click Create Collections — verify the dialog closes, the results summary appears showing three
+collections created, and those three collections appear in Lightroom under the selected set.
 
 **Acceptance Scenarios**:
 
 1. **Given** the plugin dialog is open and a collection set is selected, **When** the user
-   enters one or more collection names (one per line) and clicks Execute, **Then** each
-   non-empty line becomes a new collection under the selected set and a results summary is shown.
+   enters one or more collection names (one per line) and clicks Create Collections, **Then**
+   the dialog closes, each non-empty line becomes a new collection under the selected set, and
+   a results summary is shown.
 2. **Given** a collection name that already exists in the selected set, **When** the user
-   clicks Execute, **Then** the existing collection is preserved (not duplicated) and the
-   operation is counted as a success.
-3. **Given** no collection set has been selected, **When** the user clicks Execute, **Then**
-   an error message prompts the user to select a set before proceeding; the dialog remains open.
+   clicks Create Collections, **Then** the existing collection is preserved (not duplicated)
+   and the operation is counted as a success.
+3. **Given** no collection set has been selected, **When** the user clicks Create Collections,
+   **Then** an error message prompts the user to select a set before proceeding; the dialog
+   remains open.
 4. **Given** the collection names field is empty or contains only blank lines, **When** the
-   user clicks Execute, **Then** an error message prompts the user to enter at least one name;
-   no collections are created.
+   user clicks Create Collections, **Then** an error message prompts the user to enter at least
+   one name; no collections are created.
 
 ---
 
@@ -117,8 +121,33 @@ sets reappear. Select a set and confirm Execute uses that selection.
    (e.g., filtering "2024" shows "Events » 2024 » Summer" with the parent path included).
 4. **Given** the filter field is cleared, **When** the selector updates, **Then** all collection
    sets reappear.
-5. **Given** the user selects a collection set after filtering, **When** Execute is clicked,
-   **Then** the operation uses the selected set as the destination.
+5. **Given** the user selects a collection set after filtering, **When** Create Collections is
+   clicked, **Then** the operation uses the selected set as the destination.
+
+---
+
+### User Story 4 - Cancel Without Creating (Priority: P1)
+
+A user who has opened the plugin dialog — perhaps to inspect the collection set list or by
+accident — wants to exit without creating any collections. A dedicated Cancel button dismisses
+the dialog without touching the catalog.
+
+**Why this priority**: Cancel is a fundamental safety mechanism. Without it, any dismissal of
+the dialog would risk creating collections; users expect to be able to abandon a dialog without
+side effects.
+
+**Independent Test**: Open the dialog, select a collection set, enter collection names, then
+click Cancel — verify the dialog closes and no new collections appear in the catalog under any
+collection set.
+
+**Acceptance Scenarios**:
+
+1. **Given** the dialog is open with any content, **When** the user clicks Cancel, **Then**
+   the dialog closes and no collections are created.
+2. **Given** the user has typed collection names and selected a collection set, **When** the
+   user clicks Cancel, **Then** none of the entered names are created as collections.
+3. **Given** the dialog is open with no inputs entered, **When** the user clicks Cancel,
+   **Then** the dialog closes with no side effects.
 
 ---
 
@@ -130,7 +159,8 @@ sets reappear. Select a set and confirm Execute uses that selection.
   it)?
 - How does the plugin handle very long collection names (beyond system limits)?
 - What happens when a collection set is deleted in Lightroom while the plugin dialog is open?
-- How does the plugin behave when Execute is clicked multiple times rapidly?
+- How does the plugin behave when Create Collections is clicked multiple times rapidly (double-click)?
+- What happens if Cancel is clicked immediately after Create Collections while collection creation is in progress?
 
 ## Requirements *(mandatory)*
 
@@ -146,20 +176,21 @@ sets reappear. Select a set and confirm Execute uses that selection.
   identical to the input if no changes are needed), or `<ERROR: description>` if sanitization
   fails or would produce an empty name. This field is system-generated output and its content
   is not subject to the character sanitization rules that apply to user input.
-- **FR-004**: The plugin MUST provide an Execute action that creates collections in the selected
-  set using sanitized names.
+- **FR-004**: The plugin MUST provide a Create Collections action that creates collections in
+  the selected set using sanitized names. This action is associated with the primary action
+  button of the main dialog (FR-024); there is no separate Execute push button (FR-023).
 - **FR-005**: The plugin MUST sanitize collection names by replacing reserved characters with
   underscores and collapsing consecutive underscores into one.
 - **FR-006**: The plugin MUST trim leading and trailing whitespace from each collection name.
 - **FR-007**: The plugin MUST skip blank lines in the collection names input.
-- **FR-008**: The plugin MUST display a results summary after Execute showing the count of
-  collections created and, for each name that resulted in ERROR status, the name and reason it
-  was skipped — partial success (some created, some errored) is a valid outcome.
-- **FR-009**: The plugin MUST prevent execution when no collection set is selected, with a clear
-  error message.
-- **FR-010**: The plugin MUST prevent execution only when *no* collection names would produce a
-  valid sanitized name (i.e., the entire batch is ERROR); if at least one name is valid, Execute
-  MUST proceed and report per-name outcomes.
+- **FR-008**: The plugin MUST display a results summary after collection creation showing the
+  count of collections created and, for each name that resulted in ERROR status, the name and
+  reason it was skipped — partial success (some created, some errored) is a valid outcome.
+- **FR-009**: The plugin MUST prevent collection creation when no collection set is selected,
+  with a clear error message; the dialog MUST remain open.
+- **FR-010**: The plugin MUST prevent collection creation only when *no* collection names would
+  produce a valid sanitized name (i.e., the entire batch is ERROR); if at least one name is
+  valid, the Create Collections action MUST proceed and report per-name outcomes.
 - **FR-011**: The plugin MUST provide a filter field within the main dialog that narrows
   the collection set selector by case-insensitive partial name match.
 - **FR-016**: The filter field MUST appear above the collection set selector within the
@@ -187,6 +218,20 @@ sets reappear. Select a set and confirm Execute uses that selection.
 - **FR-022**: The Proposed Collection Names field MUST update in response to every change in
   the Collection Names field — whether the change is a single keystroke, completing a line,
   or focus leaving the Collection Names field.
+
+- **FR-023**: The main dialog MUST NOT contain a separate Execute push button. The collection
+  creation action MUST be associated with the primary action button of the dialog (FR-024).
+- **FR-024**: The main dialog MUST provide a primary action button labelled "Create Collections"
+  that, when clicked, validates inputs and — if valid — creates collections in the selected
+  collection set using sanitized names and displays the execution results summary.
+- **FR-025**: The main dialog MUST provide a Cancel button that dismisses the dialog without
+  creating any collections, regardless of what has been entered in the dialog.
+- **FR-026**: Clicking the primary action button MUST perform input validation: a collection
+  set MUST be selected and at least one collection name MUST produce a valid sanitized name;
+  if either condition is unmet, an error message MUST be shown and the dialog MUST remain open.
+- **FR-027**: The partial-success behaviour defined in FR-010 MUST be preserved: if some names
+  are valid and some are invalid, valid names are created and all outcomes are reported in the
+  results summary.
 
 ### Character Sanitization Rules
 
@@ -231,7 +276,15 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
 - **SC-005**: Error messages are self-explanatory — a first-time user can resolve every
   validation error without consulting documentation.
 - **SC-006**: The Proposed Collection Names field is purely read-only and does not create,
-  modify, or delete any catalog entries; all catalog changes are confined to the Execute action.
+  modify, or delete any catalog entries; all catalog changes are confined to the Create
+  Collections action.
+- **SC-007**: A user can create collections and see the results summary via the Create
+  Collections button in under 30 seconds from dialog open to results summary — the same total
+  time as the previous Execute button path.
+- **SC-008**: Clicking Cancel never results in any collections being created — 100% of Cancel
+  interactions leave the catalog unchanged.
+- **SC-009**: The Create Collections button and Cancel button are immediately visible and
+  distinguishable to a first-time user without consulting documentation.
 
 ## Assumptions
 

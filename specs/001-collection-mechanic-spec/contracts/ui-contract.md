@@ -12,7 +12,7 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 
 **Title**: "Collection Mechanic"
 **Type**: Modal dialog (`LrDialogs.presentModalDialog`)
-**Action button**: "Close" (single standard action button — no OK/Cancel)
+**Action button**: "Create Collections" (primary action); "Cancel" (secondary — dismisses without creating)
 **Width**: 50% wider than the pre-enhancement baseline dialog width.
 
 ### Layout (top to bottom)
@@ -28,7 +28,7 @@ dialogs in the Collection Mechanic plugin. It serves as the authoritative refere
 │  └──────────────────────────────────┴───────────────────────────────────┘  │
 │  [Hint: "Option+Return (Mac) or Alt+Enter (Win)"]                          │
 │────────────────────────────────────────────────────────────────────────────│
-│  [Execute]                                                      [Close]    │  ← Button row
+│  [Cancel]                                        [Create Collections]      │  ← Button row
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -105,15 +105,15 @@ A static label below the two-column names area:
 
 | Button | Label | Action |
 |--------|-------|--------|
-| Execute | "Execute" | Validate inputs → sanitize → create collections → show Execution Results dialog. Does NOT close main dialog unless user then clicks Close. |
-| Close | "Close" | Dismiss main dialog. No catalog changes. (Standard LrDialogs action button.) |
+| Cancel | "Cancel" | Dismiss main dialog. No catalog changes. |
+| Create Collections | "Create Collections" | Validate inputs → sanitize → create collections → close main dialog → show Execution Results dialog. |
 
 **Button row position**: Both buttons on the same row, aligned to the bottom of the dialog.
-Execute on the left; Close is the standard action button on the right.
+Cancel on the left; Create Collections is the standard action button on the right.
 
-**Re-entrance guard**: Execute MUST NOT be re-entrant. A boolean flag MUST prevent a second
-invocation while an operation is in progress. The button is not visually disabled (LR SDK
-limitation) but clicks are silently ignored until the current operation completes.
+**Re-entrance guard**: Create Collections MUST NOT be re-entrant. A boolean flag MUST prevent
+a second invocation while an operation is in progress. The button is not visually disabled (LR
+SDK limitation) but clicks are silently ignored until the current operation completes.
 
 **Async task requirement**: Button action callbacks run on Lightroom's C event loop and MUST
 wrap their entire body in `LrFunctionContext.postAsyncTaskWithContext(name, function(context) ... end)`
@@ -169,6 +169,6 @@ open after dismissal.
 
 | Trigger | Message |
 |---------|---------|
-| Execute clicked, no collection set selected | "Please select a collection set before proceeding." |
-| Execute clicked, no valid collection names | "Please enter at least one collection name." |
+| Create Collections clicked, no collection set selected | "Please select a collection set before proceeding." |
+| Create Collections clicked, no valid collection names | "Please enter at least one collection name." |
 | All names result in ERROR after sanitization | "All collection names are invalid after sanitization. Please review and re-enter." |

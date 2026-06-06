@@ -51,3 +51,8 @@
   by equal-height MUST; assumption added about SDK pixel-scroll limitation; US2 acceptance 
   scenario 5 and independent test updated to match. All 12 checklist items still passing.
 - Spec is ready for `/speckit-plan`.
+- v6 amendment (2026-06-06): Execute push button removed (FR-023). Primary action button
+  relabelled "Create Collections" and now closes the main dialog after creation (FR-024). Cancel
+  button restored — dismisses dialog without creating collections (FR-025). FR-026 and FR-027
+  carry forward validation and partial-success behaviour. New US4 "Cancel Without Creating"
+  added. SC-007, SC-008, SC-009 added. All 12 checklist items still passing.
