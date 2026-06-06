@@ -148,11 +148,17 @@ At a minimum, we use this to enable logging. e.g.
 ```lua
 require "Info"
 
+local LrApplication = import 'LrApplication'
 local LrLogger = import 'LrLogger'
+
 local logger = LrLogger(Info.PLUGINNAME)
 
+local catalog = LrApplication.activeCatalog()
+local catalogPath = (catalog and catalog:getPath()) or "<unknown>"
+
 logger:enable(Info.LOGGERTARGET)
-logger:info("\n========================================\nPlugin initialised: " .. Info.PLUGINNAME)
+logger:info("\n========================================\nPlugin initialised: "
+	.. Info.PLUGINNAME .. "\nCatalog: " .. catalogPath)
 ```
 
 We then reference this within the Info.lua returned table. e.g.
