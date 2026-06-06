@@ -16,6 +16,11 @@
 - Q: Are duplicate detection (FR-012) and the collection set filter field (FR-011/FR-016) case-sensitive or case-insensitive? → A: Case-insensitive for both.
 - Q: Is there a maximum number of collection names that can be submitted in a single batch? → A: No enforced limit — accept any number of names.
 
+### Session 2026-06-06
+
+- Q: If Cancel is clicked while collection creation is in progress (after Create Collections was clicked), what should happen? → A: The LR SDK cannot disable the Cancel button at runtime, so Cancel is silently ignored during active creation; creation runs to completion and the results summary is displayed normally.
+- Q: After the results dialog is dismissed following successful collection creation, what state is the plugin in? → A: Workflow complete; the main dialog does not reappear. Control returns to Lightroom; the user must re-open the plugin for another batch.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Batch Create Collections (Priority: P1)
@@ -24,9 +29,10 @@ A Lightroom Classic user wants to create many collections at once under a chosen
 set, rather than creating them one by one through the standard Lightroom UI.
 
 The user opens the plugin from the Library menu, selects the collection set that will contain
-the new collections, types the desired collection names (one per line), and clicks Create
-Collections. The plugin creates all listed collections in the chosen set, closes the dialog,
-and confirms how many were created.
+the new collections, types the desired collection names (one per line, using Option+Return
+(Mac) or Alt+Enter (Windows) to create a newline), and clicks Create Collections. The plugin
+creates all listed collections in the chosen set, closes the dialog, and confirms how many
+were created.
 
 **Why this priority**: Core value of the plugin — without batch creation there is no feature.
 
@@ -37,7 +43,8 @@ collections created, and those three collections appear in Lightroom under the s
 **Acceptance Scenarios**:
 
 1. **Given** the plugin dialog is open and a collection set is selected, **When** the user
-   enters one or more collection names (one per line) and clicks Create Collections, **Then**
+   enters one or more collection names (one per line, using Option+Return
+(Mac) or Alt+Enter (Windows) to create a newline) and clicks Create Collections, **Then**
    the dialog closes, each non-empty line becomes a new collection under the selected set, and
    a results summary is shown.
 2. **Given** a collection name that already exists in the selected set, **When** the user
@@ -159,8 +166,8 @@ collection set.
   it)?
 - How does the plugin handle very long collection names (beyond system limits)?
 - What happens when a collection set is deleted in Lightroom while the plugin dialog is open?
-- How does the plugin behave when Create Collections is clicked multiple times rapidly (double-click)?
-- What happens if Cancel is clicked immediately after Create Collections while collection creation is in progress?
+- How does the plugin behave when Create Collections is clicked multiple times rapidly (double-click)? → Subsequent clicks are silently ignored until the current operation completes (FR-028).
+- What happens if Cancel is clicked immediately after Create Collections while collection creation is in progress? → Cancel is silently ignored; creation runs to completion and the results summary is shown (FR-028).
 
 ## Requirements *(mandatory)*
 
@@ -232,6 +239,10 @@ collection set.
 - **FR-027**: The partial-success behaviour defined in FR-010 MUST be preserved: if some names
   are valid and some are invalid, valid names are created and all outcomes are reported in the
   results summary.
+- **FR-028**: Once collection creation begins (after Create Collections validation passes),
+  any Cancel interaction MUST be silently ignored until creation completes and the results
+  summary is displayed. Collection creation MUST always run to completion; it cannot be
+  interrupted mid-batch.
 
 ### Character Sanitization Rules
 
@@ -310,3 +321,9 @@ Post-replacement: consecutive underscores MUST be collapsed to a single undersco
 - Pixel-level scroll position synchronisation between the Collection Names and Proposed
   Collection Names fields is not achievable within the plugin hosting environment; equal
   field heights (FR-019, FR-020) ensure line-level correspondence is always maintained.
+- After the results dialog is dismissed, the plugin workflow is complete. The main dialog
+  does not reappear; the user must re-open the plugin via the Library menu to create another
+  batch. No persistent dialog state is carried between sessions.
+- The Cancel button cannot be programmatically disabled at runtime within the plugin hosting
+  environment. FR-028's "silently ignored" behaviour is enforced in code rather than through
+  UI disablement.

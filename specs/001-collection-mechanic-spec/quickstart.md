@@ -50,9 +50,10 @@ The Collection Mechanic dialog opens.
    ```
    - The **Proposed Collection Names** field on the right updates live as you type, showing
      the sanitized name for each line. All three names should appear unchanged.
-4. Click **Execute**.
-   - Results dialog should show: "Successfully created 3 collection(s)."
-5. Click **Close** on both the results dialog and the main dialog.
+4. Click **Create Collections**.
+   - The main dialog closes automatically.
+   - Results dialog opens and should show: "Successfully created 3 collection(s)."
+5. Click **Close** on the results dialog.
 6. In Lightroom's Collections panel, expand the selected collection set — the three new
    collections should appear.
 
@@ -70,8 +71,21 @@ The Collection Mechanic dialog opens.
    - `Summer/Beach 2024` → `Summer_Beach 2024` then eventually `Summer_Beach_2024`
    - `"Best Shots"` → `_Best Shots_` then eventually `_Best_Shots_`
    - `Normal Name` → `Normal Name` (unchanged)
-3. Click **Execute** — all three collections are created with the sanitized names shown
-   in the Proposed Collection Names field.
+3. Click **Create Collections** — the main dialog closes and all three collections are
+   created with the sanitized names shown in the Proposed Collection Names field.
+
+---
+
+## Cancelling Without Creating
+
+If you open the dialog but decide not to create any collections:
+
+1. Click **Cancel** at any point before clicking Create Collections.
+2. The dialog closes immediately — no collections are created and no changes are made to the
+   catalog.
+
+> **Note**: If you have already clicked Create Collections and collection creation is
+> underway, Cancel has no effect. Creation always runs to completion once started.
 
 ---
 

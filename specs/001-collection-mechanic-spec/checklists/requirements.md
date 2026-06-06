@@ -56,3 +56,7 @@
   button restored — dismisses dialog without creating collections (FR-025). FR-026 and FR-027
   carry forward validation and partial-success behaviour. New US4 "Cancel Without Creating"
   added. SC-007, SC-008, SC-009 added. All 12 checklist items still passing.
+- v7 clarification session (2026-06-06): 2 questions answered — Cancel during active creation
+  (FR-028 added: Cancel silently ignored mid-batch; creation runs to completion) and
+  post-creation workflow (assumption added: workflow complete after results dialog dismissed;
+  main dialog does not reappear). All 12 checklist items still passing.

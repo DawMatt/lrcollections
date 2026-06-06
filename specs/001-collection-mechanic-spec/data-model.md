@@ -20,7 +20,7 @@ components. It is the sole source of truth for dialog state.
 | `selectedCollectionSet` | `CollectionSetItem` or `false` | The set chosen in the popup — `false` when no set is selected. `false` (not `nil`) is required so the LrView popup binding activates the placeholder item on dialog open; `nil` does not trigger the placeholder | `false` |
 | `collectionNamesInput` | string | Raw multi-line text from the names input field | `""` |
 | `proposedNamesText` | string | Computed multi-line text for the Proposed Collection Names field — one sanitized name (or `<ERROR: description>`) per line, kept in sync with `collectionNamesInput` | `""` |
-| `executionResults` | array of `ResultRecord` | Output of the last Execute | `{}` |
+| `executionResults` | array of `ResultRecord` | Output of the last Create Collections action | `{}` |
 
 ### Derived State Rules
 
@@ -127,14 +127,23 @@ Output: `{sanitizedName, status}`.
   → Split input by line → sanitize each line → join as proposedNamesText
   → Proposed Collection Names field updates immediately (per-keystroke)
 
-[Execute clicked]
-  → Validate: selectedCollectionSet not false/nil → ERROR dialog if false or nil
+[Create Collections clicked]
+  → Validate: selectedCollectionSet not false/nil → LrDialogs.message error if invalid; dialog stays open
   → Parse collectionNamesInput → array of CollectionNameEntry
-  → Validate: at least one non-ERROR entry → ERROR dialog if not
+  → Validate: at least one non-ERROR entry → LrDialogs.message error if not; dialog stays open
+  → Re-entrance guard engaged — subsequent clicks silently ignored until operation completes
   → For each entry with status != ERROR: attempt createCollection via withWriteAccessDo
+  → Any Cancel click during the above is silently ignored (FR-028)
   → Produce executionResults
-  → Display Execution results dialog
+  → Close main dialog
+  → Display Execution Results dialog
 
-[Close clicked]
+[Cancel clicked — before creation begins]
   → Dialog dismissed, no catalog changes
+
+[Cancel clicked — while creation is in progress]
+  → Silently ignored; creation continues to completion (FR-028)
+
+[Execution Results dialog closed]
+  → Workflow complete; plugin idle; main dialog does not reappear
 ```

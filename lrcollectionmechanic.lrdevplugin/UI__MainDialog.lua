@@ -1,6 +1,5 @@
 require "Info"
-local LrLogger          = import 'LrLogger'
-local LrFunctionContext = import 'LrFunctionContext'
+local LrLogger = import 'LrLogger'
 local logger = LrLogger(Info.PLUGINNAME)
 
 UIMainDialog = {}
@@ -15,11 +14,12 @@ local function buildPopupItems(sets)
     return items
 end
 
-local function validateExecute(props)
-    local LrDialogs = import 'LrDialogs'
+-- Validates dialog inputs. Returns the parsed entries array on success, or nil + error
+-- message string on failure. Called from CollectionMechanic.lua after the actionVerb
+-- button is clicked (FR-026).
+function UIMainDialog.validateInputs(props)
     if not props.selectedCollectionSet or props.selectedCollectionSet == false then
-        LrDialogs.message("Please select a collection set before proceeding.", "", "info")
-        return nil
+        return nil, "Please select a collection set before proceeding."
     end
     local entries = StringUtils.parseCollectionNames(props.collectionNamesInput)
     local hasValid = false
@@ -27,13 +27,14 @@ local function validateExecute(props)
         if e.status ~= "ERROR" then hasValid = true; break end
     end
     if not hasValid then
-        LrDialogs.message("Please enter at least one collection name.", "", "info")
-        return nil
+        return nil, "Please enter at least one collection name."
     end
     return entries
 end
 
-local function showExecutionResultsDialog(results)
+-- Shows the Execution Results dialog after collection creation completes.
+-- Called from CollectionMechanic.lua once the main dialog has already closed (FR-024).
+function UIMainDialog.showResultsDialog(results)
     local LrView    = import 'LrView'
     local LrDialogs = import 'LrDialogs'
     local f = LrView.osFactory()
@@ -88,30 +89,12 @@ end
 -- Returns main dialog view for presentation by CollectionMechanic.lua.
 -- Dialog is 50% wider than the pre-enhancement baseline:
 --   filter/popup fields widened from 40 → 60 chars;
---   names area split into two equal-width columns (40 chars each = 80 chars total vs 50 before).
+--   names area split into two equal-width columns (40 chars each).
+-- No push_buttons in the view — Create Collections (actionVerb) and Cancel (cancelVerb)
+-- are provided by presentModalDialog in CollectionMechanic.lua (FR-023, FR-024, FR-025).
 function UIMainDialog.createMainDialog(props)
     local LrView = import 'LrView'
     local f = LrView.osFactory()
-    local executing = false  -- re-entrance guard for Execute
-
-    -- Button callbacks run in Lightroom's C event loop and cannot yield.
-    -- LrFunctionContext.postAsyncTaskWithContext creates a full LR function context
-    -- that integrates with LR's task scheduler, enabling catalog writes to yield correctly.
-    -- (LrTasks.startAsyncTask is insufficient — it does not register with LR's scheduler.)
-    local function onExecute()
-        if executing then return end
-        executing = true
-        LrFunctionContext.postAsyncTaskWithContext("CollectionMechanic.Execute", function(_context)
-            local entries = validateExecute(props)
-            if not entries then executing = false; return end
-            local targetSet = props.selectedCollectionSet  -- {displayName, object}
-            logger:info("Execute: target=" .. (targetSet.displayName or "?") .. ", count=" .. #entries)
-            local results = CatalogUtils.createCollections(targetSet.object, entries, targetSet.displayName)
-            props.executionResults = results
-            showExecutionResultsDialog(results)
-            executing = false
-        end)
-    end
 
     return f:column {
         bind_to_object = props,
@@ -166,11 +149,12 @@ function UIMainDialog.createMainDialog(props)
                     width_in_chars     = 40,
                     fill_horizontal    = 1,
                     font               = "<monospace>",
-                    placeholder_string = "Enter collection names, one per line",
+                    placeholder_string = "Enter collection names, one per line, using "
+                        .. ((WIN_ENV and "Alt+Enter") or "Option+Return") .. " to create a new line",
                 },
             },
 
-            -- Right column: live sanitization preview (read-only)
+            -- Right column: live sanitization preview (read-only; updated by observer in CollectionMechanic.lua)
             f:column {
                 fill_horizontal = 1,
                 spacing = f:label_spacing(),
@@ -181,20 +165,9 @@ function UIMainDialog.createMainDialog(props)
                     width_in_chars  = 40,
                     fill_horizontal = 1,
                     font            = "<monospace>",
-                    enabled         = false,  -- read-only; updated by observer in CollectionMechanic.lua
+                    enabled         = false,
                 },
             },
-        },
-
-        f:static_text {
-            title   = "To add a new line: Option+Return (Mac) or Alt+Enter (Windows)",
-            enabled = false,
-        },
-
-        -- Button row: Execute on the left; Close is the standard action button (right, via presentModalDialog)
-        f:row {
-            spacing = f:control_spacing(),
-            f:push_button { title = "Execute", action = onExecute },
         },
     }
 end

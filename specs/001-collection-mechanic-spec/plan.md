@@ -9,11 +9,15 @@
 The Collection Mechanic Plugin enables Lightroom Classic users to batch-create collections
 under a chosen collection set from a single modal dialog. The dialog provides a case-insensitive
 filter field (above the collection set selector), a two-column names area (Collection Names on
-the left, read-only Proposed Collection Names on the right), and an Execute action. Sanitized
-names are shown live in the Proposed Collection Names field as the user types — errors appear
-inline as `<ERROR: description>`. Invalid characters in names are replaced with underscores;
-partial-success batches (some names valid, some ERROR) are supported — valid names are created
-and errors reported per-name in the results summary.
+the left, read-only Proposed Collection Names on the right), and a Create Collections primary
+action button. Sanitized names are shown live in the Proposed Collection Names field as the
+user types — errors appear inline as `<ERROR: description>`. Clicking Create Collections
+validates inputs, creates the collections, closes the dialog, and shows an execution results
+summary. A Cancel button dismisses the dialog without any catalog changes. Invalid characters
+in names are replaced with underscores; partial-success batches (some names valid, some ERROR)
+are supported — valid names are created and errors reported per-name in the results summary.
+After the results summary is dismissed, the workflow is complete; the user re-opens the plugin
+for another batch.
 
 The existing plugin has functional code but requires two remediation items before feature work
 proceeds: file renaming to double-underscore convention (Principle II) and introduction of
@@ -39,7 +43,7 @@ is available for LR SDK interactions; Lightroom's sandbox prevents external test
 
 **Performance Goals**:
 - Dialog opens and collection set list populates within 2 seconds
-- 20 collections created and confirmed within 30 seconds of clicking Execute
+- 20 collections created and confirmed within 30 seconds of clicking Create Collections
 - Filter field narrows the collection set selector immediately on each keystroke (no perceptible
   lag for catalogs with up to 500 collection sets)
 

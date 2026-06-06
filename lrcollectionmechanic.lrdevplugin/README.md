@@ -33,7 +33,7 @@ A powerful Adobe Lightroom Classic plugin for creating multiple collections in b
    - Can be any top-level or nested collection set
 
 3. **Enter Collection Names**
-   - Type collection names in the text field, one per line
+   - Type collection names in the text field, one per line, using Option+Return (Mac) or Alt+Enter (Windows) to create a newline
    - Can use any characters; invalid ones will be sanitized
 
 4. **Preview with Dry Run** (Recommended)

@@ -79,12 +79,35 @@ function CollectionMechanic.showCollectionMechanicDialog()
 
         local contents = UIMainDialog.createMainDialog(props)
 
-        LrDialogs.presentModalDialog {
-            title      = "Collection Mechanic",
-            contents   = contents,
-            actionVerb = "Close",
-            cancelVerb = "< exclude >",
-        }
+        -- Present the dialog in a loop so it can be re-shown when validation fails (FR-026).
+        -- Create Collections (actionVerb) closes the dialog; Cancel (cancelVerb default) exits.
+        -- FR-028: the dialog closes before creation begins, so Cancel cannot fire during creation.
+        local keepShowing = true
+        while keepShowing do
+            local result = LrDialogs.presentModalDialog {
+                title      = "Collection Mechanic",
+                contents   = contents,
+                actionVerb = "Create Collections",
+            }
+
+            if result == "cancel" then
+                logger:info("showCollectionMechanicDialog: cancelled by user")
+                keepShowing = false
+            else  -- result == "ok"
+                local entries, errMsg = UIMainDialog.validateInputs(props)
+                if errMsg then
+                    LrDialogs.message(errMsg, "", "info")
+                    -- keepShowing remains true; dialog re-presents with existing props state
+                else
+                    local targetSet = props.selectedCollectionSet
+                    logger:info("Create Collections: target=" .. (targetSet.displayName or "?") .. ", count=" .. #entries)
+                    local results = CatalogUtils.createCollections(targetSet.object, entries, targetSet.displayName)
+                    props.executionResults = results
+                    UIMainDialog.showResultsDialog(results)
+                    keepShowing = false
+                end
+            end
+        end
     end)
 end
 

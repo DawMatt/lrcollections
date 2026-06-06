@@ -19,8 +19,7 @@ return {
 		["$$$/CollectionMechanic/InputHelp"] = "Enter collection names, one per line. Invalid characters will be replaced with underscores.",
 		
 		-- Button labels
-		["$$$/CollectionMechanic/DryRunButton"] = "Dry Run",
-		["$$$/CollectionMechanic/ExecuteButton"] = "Execute",
+		["$$$/CollectionMechanic/CreateCollectionsButton"] = "Create Collections",
 		["$$$/CollectionMechanic/CloseButton"] = "Close",
 		
 		-- Dialogs and messages
@@ -39,9 +38,6 @@ return {
 		["$$$/CollectionMechanic/SetDeleted/Title"] = "Collection Set Deleted",
 		["$$$/CollectionMechanic/SetDeleted/Message"] = "The selected collection set no longer exists. Please select a different one.",
 		
-		["$$$/CollectionMechanic/DryRunTitle"] = "Dry Run Preview",
-		["$$$/CollectionMechanic/DryRunSummary"] = "Dry Run Results",
-		
 		["$$$/CollectionMechanic/ExecutionTitle"] = "Execution Results",
 		["$$$/CollectionMechanic/ExecutionSummary"] = "Execution Complete",
 		
@@ -53,8 +49,6 @@ return {
 		["$$$/CollectionMechanic/Status/FAILED"] = "FAILED",
 		
 		-- Log messages
-		["$$$/CollectionMechanic/Log/StartingDryRun"] = "Starting dry run...",
-		["$$$/CollectionMechanic/Log/DryRunCompleted"] = "Dry run completed.",
 		["$$$/CollectionMechanic/Log/StartingExecution"] = "Starting execution...",
 		["$$$/CollectionMechanic/Log/ExecutionCompleted"] = "Execution completed.",
 		["$$$/CollectionMechanic/Log/CreatingCollections"] = "Creating collections...",

@@ -3,8 +3,8 @@
 	Version 1.0
 	
 	A plugin for batch creating collections under a specified collection set.
-	Includes dry-run mode for previewing name transformations and execution mode
-	for creating collections in the catalog.
+	Live sanitization preview shows proposed names as you type. Click Create
+	Collections to batch-create them, or Cancel to exit without changes.
 --]]
 
 -- Static details about the plugin, shared across modules

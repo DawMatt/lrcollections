@@ -74,7 +74,7 @@ width, including its scroll bar).
 | Label | "Collection Names (one per line)" — appears above the field |
 | Type | Multi-line text field (`edit_field`, scrollable) |
 | Binding | `props.collectionNamesInput` (two-way) |
-| Placeholder | "Enter collection names, one per line" |
+| Placeholder | "Enter collection names, one per line, using Alt+Enter (Windows) or Option+Return (Mac) to create a new line" - only mention the new line key combination for this operating system |
 | Width | 50% of the names area (equal to the Proposed Collection Names field) |
 | Height | Fixed `height_in_lines` — same value as the Proposed Collection Names field |
 | Behaviour | Free-form text input. Each non-blank line is treated as one collection name. Every change fires the `collectionNamesInput` observer which updates `proposedNamesText`. |

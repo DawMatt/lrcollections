@@ -16,7 +16,7 @@ must complete before any user story phase begins. User stories then proceed in p
 ## Format: `[ID] [P?] [Story?] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies on incomplete tasks)
-- **[Story]**: Which user story this task belongs to (US1, US2, US3)
+- **[Story]**: Which user story this task belongs to (US1, US2, US3, US4)
 - File paths are relative to the repository root
 
 ---
@@ -62,25 +62,31 @@ work can begin until this phase is complete.
 
 ## Phase 3: User Story 1 — Batch Create Collections (Priority: P1) 🎯 MVP
 
-**Goal**: User selects a collection set, enters names, clicks Execute, and collections are
-created with sanitized names. Partial-success batches supported.
+**Goal**: User selects a collection set, enters names, clicks Create Collections — collections
+are created with sanitized names, the main dialog closes, and the results summary is shown.
+Partial-success batches supported. Cancel exits the dialog without creating anything.
+
+**Note**: T014, T016, T017 reflect the final button model (Create Collections + Cancel per
+ui-contract.md). Code was previously implemented with the old Execute + Close model. Phase 6
+(US4) contains the rework tasks that bring the code into line with these task descriptions.
 
 **Independent Test**: Select a collection set, enter three names (one with a special character),
-click Execute — verify the execution results dialog shows 3 entries and all three collections
-appear in Lightroom under the selected set.
+click Create Collections — verify the main dialog closes, the execution results dialog shows 3
+entries, and all three collections appear in Lightroom under the selected set.
 
 ### Implementation for User Story 1
 
 - [X] T013 [US1] Populate `props.allCollectionSets` and `props.filteredCollectionSets` on dialog open in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — call `CatalogUtils.getCollectionSets()` inside `LrFunctionContext` and assign results to both fields before showing dialog; log the count of sets found
-- [X] T014 [US1] Build main dialog skeleton in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — collection set popup row (bound to `props.filteredCollectionSets` / `props.selectedCollectionSet`), collection names multi-line text field (bound to `props.collectionNamesInput`), placeholder for Proposed Collection Names column (to be expanded in US2), and button row with Create Collections (primary action) and Cancel buttons per ui-contract.md; return view to `CollectionMechanic.showCollectionMechanicDialog` for presentation via `LrDialogs.presentModalDialog`
+- [X] T014 [US1] Build main dialog view in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — collection set popup row (bound to `props.filteredCollectionSets` / `props.selectedCollectionSet`), collection names multi-line text field (bound to `props.collectionNamesInput`), Proposed Collection Names column (read-only, bound to `props.proposedNamesText`); no push_buttons in the view — the Create Collections action button and Cancel button come from `actionVerb`/`cancelVerb` in `presentModalDialog` per ui-contract.md (FR-023, FR-024, FR-025)
 - [X] T015 [US1] Implement `CatalogUtils.createCollections(targetSet, entries)` in `lrcollectionmechanic.lrdevplugin/Util__CatalogUtils.lua` — wrap all creation in a single `catalog:withWriteAccessDo("Create Collections", func)` call; within the callback iterate entries with status `~= "ERROR"`, check for existing collection using `string.lower` comparison (FR-012 case-insensitive duplicate detection) and if found mark as success without creating, otherwise call `catalog:createCollection(entry.sanitizedName, targetSet, true)` and check return value (`~= nil`) for success — do NOT use `pcall` around any LR SDK call (Principle III); populate `entry.created` and `entry.errorMessage`; return full results array (partial-success pattern from research.md D-006)
-- [X] T016 [US1] Implement Create Collections validation in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — check `props.selectedCollectionSet ~= false` (show "Please select a collection set before proceeding." via `LrDialogs.message` if false/nil); check parsed names contain at least one non-ERROR entry (show "Please enter at least one collection name." if not); abort if either check fails; dialog MUST remain open on validation failure
-- [X] T017 [US1] Implement Create Collections button handler in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — wrap body in `LrFunctionContext.postAsyncTaskWithContext`; call `StringUtils.parseCollectionNames(props.collectionNamesInput)`, run validation (T016), call `CatalogUtils.createCollections`, store results in `props.executionResults`, close main dialog, trigger Execution Results dialog; implement re-entrance guard boolean flag per ui-contract.md
-- [X] T018 [US1] Build Execution Results dialog in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — summary line "Successfully created X collection(s)", error details table (columns: Name | Sanitized | Reason) shown only when at least one ERROR exists, single Close button per ui-contract.md Execution Results Dialog section; use `cancelVerb = "< exclude >"`
+- [X] T016 [US1] Implement input validation function `UIMainDialog.validateInputs(props)` in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — exported as a module-level function; check `props.selectedCollectionSet ~= false` (return nil, "Please select a collection set before proceeding." if false/nil); parse `props.collectionNamesInput` via `StringUtils.parseCollectionNames`; check at least one non-ERROR entry (return nil, "Please enter at least one collection name." if not); on success return the entries array (FR-026)
+- [X] T017 [US1] Implement Create Collections result handler in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — replace `actionVerb = "Close"` with `actionVerb = "Create Collections"`; remove `cancelVerb = "< exclude >"`; wrap `presentModalDialog` in a loop: if result == "cancel" break (log "cancelled", no catalog changes, FR-025); if result == "ok" call `UIMainDialog.validateInputs(props)` — if validation fails show error via `LrDialogs.message` and re-loop (dialog re-presents with existing props state, dialog MUST remain open per FR-026); if valid call `CatalogUtils.createCollections`, store results in `props.executionResults`, call `UIMainDialog.showResultsDialog(props.executionResults)`, then break; the loop ensures the dialog re-presents on validation failure (FR-026) and closes after successful creation (FR-024); log "create started", per-name outcomes, and completion summary (FR-028 is automatically satisfied: dialog closes before creation begins so Cancel cannot be clicked during creation)
+- [X] T018 [US1] Build Execution Results dialog in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — summary line "Successfully created X collection(s)", error details table (columns: Name | Sanitized | Reason) shown only when at least one ERROR exists, single Close button per ui-contract.md Execution Results Dialog section; use `cancelVerb = "< exclude >"` on the results dialog (results dialog has no Cancel — only the main dialog has Cancel)
 - [X] T019 [US1] Log Create Collections operations in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` and `Util__CatalogUtils.lua` — `logger:info` for operation start (collection set name, name count), `logger:warn` per skipped ERROR entry, `logger:info` for completion summary (created count, error count)
 
-**Checkpoint**: User Story 1 fully functional — batch creation works, partial failures reported,
-results dialog shows correct summary. Test independently before moving to US2.
+**Checkpoint**: User Story 1 fully functional — batch creation works, main dialog closes on
+success, partial failures reported, results dialog shows correct summary. Test independently
+before moving to US2.
 
 ---
 
@@ -106,8 +112,9 @@ that no collections are created by typing alone.
 - [X] T024 [US2] Log live sanitization updates in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — on observer fire, log at `logger:debug` level the line count and error count in the proposed output (avoids per-keystroke noise at info level); no catalog interactions are logged here
 
 **Checkpoint**: User Stories 1 AND 2 both work independently. Dialog is visibly wider. Proposed
-Collection Names field updates live on each keystroke. No Dry Run button present. Execute still
-creates collections correctly using the same sanitization logic as the live preview.
+Collection Names field updates live on each keystroke. No Dry Run button present. Create
+Collections still creates collections correctly using the same sanitization logic as the live
+preview.
 
 ---
 
@@ -119,16 +126,39 @@ partial name match. Selection persists when filter changes.
 **Independent Test**: Open the dialog on a catalog with 5+ collection sets. Type a partial name
 in the filter field — selector narrows to matching sets. Clear the filter — all sets reappear.
 Select a set, then type a different filter — selected set remains in `props.selectedCollectionSet`
-even if hidden. Click Execute — operation uses the still-selected set.
+even if hidden. Click Create Collections — operation uses the still-selected set.
 
 ### Implementation for User Story 3
 
 - [X] T025 [US3] Add filter field row above the collection set popup in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — single-line text field with label "Collection Set Filter", bound two-way to `props.filterText`, placeholder "Type to filter collection sets...", positioned immediately above the collection set selector per ui-contract.md Filter Field spec; collection set popup label is "Base Collection Set"
-- [X] T026 [US3] Implement filter observer in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` or `UI__MainDialog.lua` — observe `props.filterText` changes; recompute `props.filteredCollectionSets` from `props.allCollectionSets` using `string.find(string.lower(displayName), string.lower(filterText), 1, true) ~= nil`; assign full list when `filterText` is empty (case-insensitive plain-text match per research.md D-003)
-- [X] T027 [US3] Verify selection-persistence in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — confirm `props.selectedCollectionSet` is NOT reset when `props.filteredCollectionSets` changes; Execute must use the stored selection regardless of current filter state
+- [X] T026 [US3] Implement filter observer in `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — observe `props.filterText` changes; recompute `props.filteredCollectionSets` from `props.allCollectionSets` using `string.find(string.lower(displayName), string.lower(filterText), 1, true) ~= nil`; assign full list when `filterText` is empty (case-insensitive plain-text match per research.md D-003)
+- [X] T027 [US3] Verify selection-persistence in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — confirm `props.selectedCollectionSet` is NOT reset when `props.filteredCollectionSets` changes; Create Collections must use the stored selection regardless of current filter state
 
 **Checkpoint**: All three user stories independently functional. Filter narrows correctly,
 clears correctly, and does not disturb existing selection.
+
+---
+
+## Phase 6: User Story 4 — Cancel Without Creating / Button Model Refactor (Priority: P1)
+
+**Goal**: Replace the old Execute push_button + Close action model with the standard
+Create Collections (actionVerb) + Cancel (cancelVerb) pattern. Cancel exits the dialog without
+creating any collections. The main dialog closes automatically after successful creation.
+
+**Independent Test**: Open the dialog, select a collection set, enter collection names, click
+Cancel — verify the dialog closes and no new collections appear in the catalog. Then re-open,
+repeat with Create Collections — verify the dialog closes, collections are created, results
+summary appears.
+
+### Implementation for User Story 4
+
+- [X] T032 [US4] Remove Execute push_button from `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — delete the `onExecute` function, the `executing` re-entrance guard boolean, and the `f:push_button { title = "Execute", ... }` control from the button row view; export `UIMainDialog.validateInputs(props)` as a module-level function (see T016 — implement both tasks together) (FR-023)
+- [X] T033 [US1] [US4] Update `lrcollectionmechanic.lrdevplugin/CollectionMechanic.lua` — replace `actionVerb = "Close"` with `actionVerb = "Create Collections"`; remove `cancelVerb = "< exclude >"`; implement the post-dialog result handling loop described in T017: result == "cancel" → log and break (no catalog changes); result == "ok" → validate → if invalid: show error via `LrDialogs.message`, re-loop; if valid: call `CatalogUtils.createCollections` inside `LrFunctionContext.postAsyncTaskWithContext`, store results in `props.executionResults`, call `UIMainDialog.showResultsDialog(props.executionResults)`, break (FR-024, FR-025, FR-026, FR-027, FR-028)
+- [ ] T034 [US4] **[MANUAL]** Verify Cancel behaviour in Lightroom Classic — open the dialog, select a collection set, enter three collection names in the Collection Names field, then click Cancel; verify the dialog closes immediately and no new collections appear under any collection set in the catalog (SC-008)
+
+**Checkpoint**: US4 fully functional. Cancel closes dialog without catalog changes. Create
+Collections closes main dialog on success and shows results summary. All four user stories
+independently functional.
 
 ---
 
@@ -136,10 +166,10 @@ clears correctly, and does not disturb existing selection.
 
 **Purpose**: Final quality pass across all user stories.
 
-- [X] T028 Verify button row layout in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — Cancel button on the left side of the action row, Create Collections as the primary action button on the right; no Execute or Dry Run buttons present per ui-contract.md Button Row spec (FR-023, FR-024, FR-025)
+- [X] T028 Verify button row layout in `lrcollectionmechanic.lrdevplugin/UI__MainDialog.lua` — Cancel on the left (standard cancelVerb button), Create Collections as the primary action button on the right (standard actionVerb); no Execute, Dry Run, or Close buttons present per ui-contract.md Button Row spec (FR-023, FR-024, FR-025); confirm Execution Results dialog still uses `cancelVerb = "< exclude >"` (results dialog is single-button)
 - [X] T029 [P] Audit all `logger:*` calls across `lrcollectionmechanic.lrdevplugin/` — confirm `logger:info` for normal operations, `logger:warn` for recoverable issues (e.g., skipped ERROR names), `logger:error` for unexpected failures; no important operation left unlogged per constitution Principle V
 - [X] T030 [P] Search all `.lua` files in `lrcollectionmechanic.lrdevplugin/` for any remaining `require` or `import` references to single-underscore filenames (`UI_`, `Util_`) and update to double-underscore equivalents per constitution Principle II
-- [ ] T031 **[MANUAL]** Follow `specs/001-collection-mechanic-spec/quickstart.md` happy path in Lightroom Classic — install plugin, verify live sanitization updates as names are typed, create 3 collections, verify character sanitization workflow, check log output; confirm all three user stories pass their independent tests end-to-end
+- [ ] T031 **[MANUAL]** Follow `specs/001-collection-mechanic-spec/quickstart.md` happy path in Lightroom Classic — install plugin, verify Create Collections closes main dialog after creation, verify Cancel exits without creating, verify live sanitization updates as names are typed, create 3 collections, verify character sanitization workflow, check log output; confirm all four user stories pass their independent tests end-to-end
 
 ---
 
@@ -149,37 +179,36 @@ clears correctly, and does not disturb existing selection.
 
 - **Phase 1 (Setup/Remediation)**: No dependencies — start immediately. T007 (restart) MUST complete before Phase 2.
 - **Phase 2 (Foundational)**: Depends on Phase 1 + T007 restart — BLOCKS all user stories.
-- **Phase 3 (US1)**: Depends on Phase 2. T013 → T014 → T015 → T016/T017 → T018 → T019.
+- **Phase 3 (US1)**: Depends on Phase 2. T013 → T014 → T015 → T016/T032 → T017/T033 → T018 → T019.
 - **Phase 4 (US2)**: Depends on Phase 3 (T014 dialog skeleton, T008 sanitization). T020 → T021 → T022 (in parallel with T023) → T024.
 - **Phase 5 (US3)**: Depends on Phase 2. T025 requires T014 (main dialog skeleton) to exist.
+- **Phase 6 (US4)**: Depends on Phase 3 skeleton (T013, T014, T015, T018). T032 and T033 must complete before T034.
 - **Polish (Phase N)**: Depends on all desired user story phases being complete.
 
-### Within Phase 3 (US1)
+### Within Phase 3 (US1) — Revised for button model
 
 ```
 T013 (populate sets on open)
   ↓
-T014 (dialog skeleton) ← required by T015, T016, T017, T018
+T014 (dialog view — no push_buttons, view only)
   ↓
-T015 [P] (createCollections)   T016 [P] (Execute validation)
+T015 [P] (createCollections)   T016 [P] (validateInputs — module fn)
   ↓                                   ↓
-T017 (Execute handler — depends on T015 + T016)
+T017 (result handler in CollectionMechanic — depends on T015 + T016)
   ↓
 T018 (Execution Results dialog)
   ↓
 T019 (logging — can be woven in throughout)
 ```
 
-### Within Phase 4 (US2)
+### Within Phase 6 (US4)
 
 ```
-T020 (widen dialog)
+T032 (remove Execute push_button; export validateInputs from UIMainDialog)
   ↓
-T021 (two-column names layout) [P] T023 (remove Dry Run code)
+T033 (update CollectionMechanic result loop — depends on T016/T032)
   ↓
-T022 (live sanitization observer — requires T011 proposedNamesText field)
-  ↓
-T024 (debug logging for observer)
+T034 [MANUAL] (verify Cancel behaviour in Lightroom)
 ```
 
 ### Parallel Opportunities
@@ -195,10 +224,13 @@ T010 (CatalogUtils — different file from T008/T009)
 T012 (logger imports — multiple files, independent)
 
 # Phase 3 — after T014:
-T015 (createCollections) and T016 (validation) can be written in parallel
+T015 (createCollections) and T016 (validateInputs) can be written in parallel
 
 # Phase 4 — after T020+T021:
 T022 (observer) and T023 (remove dry run) can be written in parallel
+
+# Phase 6:
+T032 (UIMainDialog cleanup) sets up T033 (CollectionMechanic loop)
 ```
 
 ---
@@ -210,23 +242,24 @@ T022 (observer) and T023 (remove dry run) can be written in parallel
 1. Complete Phase 1: Setup/Remediation (includes Lightroom restart)
 2. Complete Phase 2: Foundational
 3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Follow quickstart.md Execute happy path independently
+4. **STOP and VALIDATE**: Follow quickstart.md Create Collections happy path independently
 5. Proceed to US2 when US1 is confirmed working
 
 ### Incremental Delivery
 
 1. Phase 1 + Phase 2 → Foundation ready
-2. Phase 3 → Execute works → Test US1 independently
+2. Phase 3 → Create Collections works → Test US1 independently
 3. Phase 4 → Live preview works, dialog wider → Test US2 independently
 4. Phase 5 → Filter works → Test US3 independently
-5. Phase N → Polish and full end-to-end validation
+5. Phase 6 → Cancel works, button model finalised → Test US4 independently
+6. Phase N → Polish and full end-to-end validation
 
 ---
 
 ## Notes
 
 - `[P]` tasks = different files or independent functions, no blocking dependencies
-- `[US1/US2/US3]` label maps task to its user story for traceability
+- `[US1/US2/US3/US4]` label maps task to its user story for traceability
 - **[MANUAL]** tasks require developer action in Lightroom; cannot be automated
 - File renames (T001–T003) are git operations: `git mv` preserves history
 - After T007 (restart), verify plugin loads before proceeding — check log for startup message
@@ -234,4 +267,6 @@ T022 (observer) and T023 (remove dry run) can be written in parallel
 - The live sanitization observer (T022) must NOT make any yielding SDK calls — it runs synchronously on the property change event
 - `selectedCollectionSet` initialises to `false` (not `nil`) so the popup placeholder item is the active selection on dialog open (ui-contract.md)
 - The filter observer (T026) uses `props:addObserver`, not polling
-- The main dialog uses the standard `cancelVerb` for the Cancel button (FR-025); `cancelVerb = "< exclude >"` is NOT used on the main dialog — Cancel is the intended secondary action
+- The main dialog does NOT use `cancelVerb = "< exclude >"` — Cancel is the intended secondary action (FR-025). Only the Execution Results dialog uses `cancelVerb = "< exclude >"` (single-button dialog)
+- FR-028 (Cancel silently ignored during creation) is automatically satisfied by the dialog lifecycle: the main dialog closes when Create Collections is clicked (before creation begins), so the user cannot click Cancel while creation is in progress
+- The `presentModalDialog` result loop in T033 re-presents the dialog (with existing `props` state preserved) when validation fails — user input is not lost between validation attempts

@@ -165,17 +165,37 @@ simpler and sufficient.
 
 ### D-007: Button Layout
 
-**Decision**: Single row of action buttons: `[Execute]  [Close]`. No Dry Run button; no
-separate OK / Cancel buttons. The standard Lightroom dialog action button row is used for
-Close; Execute is placed alongside it.
+**Decision**: Single row of action buttons: `[Cancel]  [Create Collections]`. No Dry Run or
+Execute buttons. Cancel is the standard `cancelVerb` button (dismisses dialog, no catalog
+changes). Create Collections is the primary action — validates inputs, creates collections,
+closes the dialog, and opens the results summary.
 
-**Rationale**: The Dry Run button has been replaced by the live Proposed Collection Names
-field (FR-003, FR-022). The user sees sanitization results in real time without needing a
-separate preview action. Removing the button reduces visual clutter and eliminates the extra
-modal dialog round-trip.
+**Rationale**: The Dry Run button was replaced by the live Proposed Collection Names field
+(FR-003, FR-022 — spec v4). The Execute push button was subsequently replaced by the standard
+dialog action button labelled "Create Collections" (FR-023, FR-024 — spec v6), which closes
+the dialog on success. Cancel is restored (FR-025 — spec v6) so the user can exit the dialog
+without creating any collections. This is standard modal dialog UX.
 
-**Alternatives considered**: Keeping the Dry Run button alongside the live preview — rejected
-because it is redundant; the live field already shows the same information.
+**Alternatives considered**: Keeping Dry Run alongside live preview — rejected (redundant).
+Keeping a separate Execute push button — rejected in favour of the conventional OK/Cancel
+pattern. Labelling the action button "OK" — rejected; "Create Collections" is more
+self-explanatory (spec assumption, v6).
+
+---
+
+### D-009: Cancel Behaviour During Active Creation
+
+**Decision**: Once collection creation begins (after Create Collections validation passes),
+any Cancel click is silently ignored. Creation runs to completion regardless.
+
+**Rationale**: The LR SDK provides no API to disable the Cancel button at runtime. Aborting
+a mid-batch write would leave the catalog in a partially-modified state with no rollback
+mechanism. Running to completion is safer and simpler; the results summary reports exactly
+what was created (FR-028, spec v7 clarification).
+
+**Alternatives considered**: Aborting creation mid-batch — rejected due to SDK limitations
+and catalog integrity risk. Showing a progress indicator — beyond scope for v1; the
+re-entrance guard silently prevents a second invocation if Create Collections is clicked again.
 
 ---
 
